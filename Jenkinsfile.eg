@@ -330,7 +330,7 @@ spec:
                             HEALTH_OK=false
                             for i in $(seq 1 30); do
                                 if kubectl exec deployment/eg-esign -n ${NAMESPACE} -- \
-                                    wget -q -O- http://localhost:3000/api/health 2>/dev/null | grep -qE '^\{"status":"(ok|warning)"'; then
+                                    wget -q -O- http://localhost:3000/api/health 2>/dev/null | grep -qE '^\\{"status":"(ok|warning)"'; then
                                     echo "✅ Health check passed"
                                     HEALTH_OK=true
                                     break
