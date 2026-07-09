@@ -319,15 +319,18 @@ spec:
                             # Health check verification
                             echo "🏥 Verifying health..."
                             # /api/health returns {"status":<overall>,"timestamp":...,"checks":{"database":{"status":...},"certificate":{"status":...}}}
-                            # with "status" as the FIRST key in the body and HTTP 500 on overall
-                            # failure. A bare `grep -q ok` also matches a healthy nested
-                            # checks.certificate.status while checks.database (or the overall
-                            # status) is "error" — anchor on the top-level field specifically,
-                            # which nested fields can never satisfy since they never open the body.
+                            # with "status" as the FIRST key in the body. The pattern is anchored
+                            # at position 0 so nested checks.*.status fields (which never open the
+                            # body) can never satisfy it — a bare `grep -q ok` would wrongly pass
+                            # a top-level "error" response whose untouched checks.certificate still
+                            # defaults to "ok". It deliberately accepts top-level "warning" (e.g.
+                            # cert unavailable, still HTTP 200) to stay coherent with the pod's own
+                            # readinessProbe, which passes on any 2xx — only top-level "error"
+                            # (HTTP 500) fails the deploy.
                             HEALTH_OK=false
                             for i in $(seq 1 30); do
                                 if kubectl exec deployment/eg-esign -n ${NAMESPACE} -- \
-                                    wget -q -O- http://localhost:3000/api/health 2>/dev/null | grep -q '^{"status":"ok"'; then
+                                    wget -q -O- http://localhost:3000/api/health 2>/dev/null | grep -qE '^\{"status":"(ok|warning)"'; then
                                     echo "✅ Health check passed"
                                     HEALTH_OK=true
                                     break
