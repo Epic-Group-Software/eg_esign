@@ -59,6 +59,12 @@ spec:
                         credentialsId: env.GIT_CREDENTIAL_ID
                     ]]
                 ])
+                script {
+                    // Capture the short SHA here, right after checkout, where GIT_COMMIT
+                    // is guaranteed to be set. The Resolve Env stage runs in a fresh pod
+                    // with no checkout, so GIT_COMMIT would be null there.
+                    env.GIT_COMMIT_SHORT = GIT_COMMIT.take(7)
+                }
                 stash includes: '**', name: 'source'
             }
         }
@@ -78,7 +84,7 @@ spec:
                     } else {
                         error "Branch ${env.BRANCH_NAME} is not an eg-esign deploy branch"
                     }
-                    env.IMAGE_TAG = "${env.TAG}-${BUILD_NUMBER}-${GIT_COMMIT.take(7)}"
+                    env.IMAGE_TAG = "${env.TAG}-${BUILD_NUMBER}-${env.GIT_COMMIT_SHORT}"
                 }
             }
         }
@@ -312,10 +318,16 @@ spec:
 
                             # Health check verification
                             echo "🏥 Verifying health..."
+                            # /api/health returns {"status":<overall>,"timestamp":...,"checks":{"database":{"status":...},"certificate":{"status":...}}}
+                            # with "status" as the FIRST key in the body and HTTP 500 on overall
+                            # failure. A bare `grep -q ok` also matches a healthy nested
+                            # checks.certificate.status while checks.database (or the overall
+                            # status) is "error" — anchor on the top-level field specifically,
+                            # which nested fields can never satisfy since they never open the body.
                             HEALTH_OK=false
                             for i in $(seq 1 30); do
                                 if kubectl exec deployment/eg-esign -n ${NAMESPACE} -- \
-                                    wget -q -O- http://localhost:3000/api/health 2>/dev/null | grep -q ok; then
+                                    wget -q -O- http://localhost:3000/api/health 2>/dev/null | grep -q '^{"status":"ok"'; then
                                     echo "✅ Health check passed"
                                     HEALTH_OK=true
                                     break
