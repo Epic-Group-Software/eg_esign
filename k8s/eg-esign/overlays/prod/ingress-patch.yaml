@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: eg-esign-ingress
+spec:
+  tls:
+    - hosts: ["esign.epicgroup.ca"]
+      secretName: eg-esign-prod-tls
+  rules:
+    - host: esign.epicgroup.ca
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: eg-esign
+                port:
+                  number: 3000
