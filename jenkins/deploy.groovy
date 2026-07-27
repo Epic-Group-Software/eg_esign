@@ -13,10 +13,13 @@ def call() {
         string(credentialsId: "eg-esign-encryption-key-2${env.CRED}", variable: 'ENCRYPTION_KEY_2'),
         string(credentialsId: "eg-esign-postgres-password${env.CRED}", variable: 'POSTGRES_PASSWORD'),
         string(credentialsId: "eg-esign-minio-password${env.CRED}", variable: 'MINIO_PASSWORD'),
-        // Shared across environments on purpose — one SendGrid account sends
-        // for both. Split into eg-esign-smtp-password{-staging,-prod} if prod
-        // ever needs its own key.
-        string(credentialsId: 'sendgrid-api-key', variable: 'SMTP_PASSWORD'),
+        // Per-environment on purpose. Sharing one SendGrid key would let
+        // staging send real mail to real signers — for an e-signature app a
+        // test document could reach actual recipients. Staging's credential is
+        // a placeholder until it gets its own SendGrid subuser or a mail sink;
+        // bad SMTP auth fails at send time, not at boot, so it does not block
+        // the deploy or the health check.
+        string(credentialsId: "eg-esign-smtp-password${env.CRED}", variable: 'SMTP_PASSWORD'),
         string(credentialsId: "eg-esign-cert-passphrase${env.CRED}", variable: 'CERT_PASSPHRASE'),
         file(credentialsId: "eg-esign-certificate-p12${env.CRED}", variable: 'CERT_FILE'),
         string(credentialsId: "eg-esign-oidc-client-id${env.CRED}", variable: 'OIDC_CLIENT_ID'),
