@@ -1,0 +1,106 @@
+# Staging-only mail sink. Staging must never authenticate against the
+# production SendGrid account — a test document would email real signers — so
+# it delivers here instead. SpamAssassin rides along as a sidecar (same shape
+# as Project-Operations) so rendered mail can be scored for spamminess.
+#
+# Deliberately ClusterIP with no ingress: captured mail is real document
+# content and should not be publicly reachable. To read it:
+#   kubectl -n eg-esign-staging port-forward svc/mailpit 8025:8025
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailpit
+  labels:
+    app: mailpit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mailpit
+  template:
+    metadata:
+      labels:
+        app: mailpit
+    spec:
+      containers:
+        - name: mailpit
+          image: axllent/mailpit:v1.27
+          env:
+            - name: MP_DATABASE
+              value: /data/mailpit.db
+            - name: MP_MAX_MESSAGES
+              value: "5000"
+            # Accept whatever credentials the app presents — the staging SMTP
+            # password is a placeholder, not a real secret.
+            - name: MP_SMTP_AUTH_ACCEPT_ANY
+              value: "1"
+            - name: MP_SMTP_AUTH_ALLOW_INSECURE
+              value: "1"
+            - name: MP_ENABLE_SPAMASSASSIN
+              value: "localhost:783"
+          ports:
+            - name: http
+              containerPort: 8025
+            - name: smtp
+              containerPort: 1025
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "10m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+        - name: spamassassin
+          image: axllent/spamassassin:latest
+          ports:
+            - name: spamd
+              containerPort: 783
+          livenessProbe:
+            tcpSocket:
+              port: 783
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "10m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        # Captured staging mail is disposable; no PVC needed.
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mailpit
+  labels:
+    app: mailpit
+spec:
+  selector:
+    app: mailpit
+  ports:
+    - port: 8025
+      targetPort: 8025
+      name: http
+    - port: 1025
+      targetPort: 1025
+      name: smtp
+  type: ClusterIP

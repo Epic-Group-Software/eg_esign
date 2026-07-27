@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: eg-esign-staging
 resources:
   - ../../base
+  - mailpit.yaml
 images:
   - name: epicregistry.azurecr.io/epic-group-software/eg-esign
     newTag: staging
