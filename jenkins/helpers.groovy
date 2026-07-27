@@ -32,7 +32,7 @@ def withGitHubCredentials(Closure body) {
 def githubPost(String path, Map payload) {
     writeFile file: '.ci-gh-payload.json', text: JsonOutput.toJson(payload)
     withGitHubCredentials {
-        sh """#!/bin/bash
+        sh """#!/bin/sh
             curl -sS -X POST -u "\$GIT_USER:\$GIT_PASS" \
                 -H "Content-Type: application/json" \
                 "https://api.github.com/repos/Epic-Group-Software/${getRepoName()}/${path}" \

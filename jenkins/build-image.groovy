@@ -45,31 +45,17 @@ EOF
                         --ignorefile .trivyignore \
                         --timeout 30m \
                         --exit-code 1 \
-                        --format json \
-                        --output .ci-trivy-image.json
+                        --format table \
+                        --output .ci-trivy-image.txt
                 ''')
             }
 
             if (status != 0) {
-                def table = container('trivy') {
-                    sh(returnStdout: true, script: '''#!/bin/sh
-                        COUNT=$(jq '[.Results[]?.Vulnerabilities[]?] | length' .ci-trivy-image.json 2>/dev/null)
-                        if [ "$COUNT" = "0" ] || [ -z "$COUNT" ]; then
-                            echo "### Image scan did not complete"
-                            echo
-                            echo "Trivy exited non-zero but produced no findings. See the build log."
-                            exit 0
-                        fi
-                        echo "### Trivy: image vulnerabilities ($COUNT found)"
-                        echo
-                        echo "| Package | Installed | Fixed in | CVE | Severity |"
-                        echo "|---------|-----------|----------|-----|----------|"
-                        jq -r '[.Results[]?.Vulnerabilities[]?][:30][]
-                            | "| \\(.PkgName) | \\(.InstalledVersion) | \\(.FixedVersion // "-") | \\(.VulnerabilityID) | \\(.Severity) |"' \
-                            .ci-trivy-image.json
-                    ''')
-                }
-                writeFile file: outputFile, text: table.trim()
+                def report = ''
+                try { report = readFile('.ci-trivy-image.txt').trim() } catch (ignored) { }
+                writeFile file: outputFile, text: report
+                    ? "### Trivy: image vulnerabilities\n\n```\n${helpers.truncateOutput(report, 20000)}\n```"
+                    : '### Image scan did not complete\n\nTrivy exited non-zero but produced no report. See the build log.'
                 error('Image vulnerability scan failed')
             }
         }

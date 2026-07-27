@@ -33,5 +33,6 @@ paths = [
     # This pipeline's own `curl -u "$GIT_USER:$GIT_PASS"` — credential
     # references, not credentials.
     '''(^|/)jenkins/.*\.groovy$''',
+    '''(^|/)Jenkinsfile(\.[A-Za-z0-9]+)?$''',
     '''(^|/)tools/upstream-sync/''',
 ]
