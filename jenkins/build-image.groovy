@@ -42,10 +42,15 @@ EOF
                 sh(returnStatus: true, script: '''#!/bin/sh
                     export TRIVY_USERNAME="${REGISTRY_USERNAME}"
                     export TRIVY_PASSWORD="${REGISTRY_TOKEN}"
+                    # --timeout: the default 5m is not enough for this image.
+                    # It carries a production node_modules tree, and Trivy
+                    # analyses every package.json in it; the default deadline
+                    # aborts the scan with "context deadline exceeded".
                     trivy image "${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}" \
                         --scanners vuln \
                         --severity HIGH,CRITICAL \
                         --ignore-unfixed \
+                        --timeout 30m \
                         --exit-code 1 \
                         --format json \
                         --output .ci-trivy-image.json

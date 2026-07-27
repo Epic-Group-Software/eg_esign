@@ -52,8 +52,10 @@ def call() {
                 --scanners vuln \
                 --severity HIGH,CRITICAL \
                 --ignore-unfixed \
+                --ignorefile .trivyignore \
                 --skip-dirs "**/node_modules" \
                 --skip-dirs "**/.next" \
+                --timeout 15m \
                 --exit-code 1 \
                 --format json \
                 --output .ci-trivy-fs.json

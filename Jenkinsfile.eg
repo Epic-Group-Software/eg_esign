@@ -169,6 +169,15 @@ pipeline {
 // Kept as functions so the stage blocks stay readable. The Jenkins Kubernetes
 // cloud provisions these into the Davinci cluster; the deploy stage then talks
 // to eg-k8s-01 through the epic-fleet-kubeconfig credential.
+//
+// CPU *requests* are deliberately far below the limits. The Davinci build
+// cluster runs 6 of 7 schedulable nodes at 91-99% of requested CPU (memory is
+// only 21-43%), so a 1000m request leaves a pod Pending with "Insufficient
+// cpu" — which is exactly how the first eg-esign build stalled. Requests are
+// scheduling reservations, not throttles: these pods still burst to the limit
+// once placed, and the npm build is memory-bound rather than CPU-bound.
+// If the cluster gains capacity, raising the requests back would reduce
+// noisy-neighbour contention during builds.
 
 def podJnlp() {
     return '''
@@ -180,8 +189,8 @@ spec:
     image: jenkins/inbound-agent:3345.v03dee9b_f88fc-6
     resources:
       requests:
-        memory: "512Mi"
-        cpu: "200m"
+        memory: "256Mi"
+        cpu: "100m"
 '''
 }
 
@@ -197,8 +206,8 @@ spec:
     image: jenkins/inbound-agent:3345.v03dee9b_f88fc-6
     resources:
       requests:
-        memory: "512Mi"
-        cpu: "200m"
+        memory: "256Mi"
+        cpu: "100m"
   - name: node
     image: node:22-alpine
     command: ['sleep', '9999']
@@ -210,10 +219,10 @@ spec:
     resources:
       requests:
         memory: "4Gi"
-        cpu: "1000m"
+        cpu: "400m"
       limits:
         memory: "10Gi"
-        cpu: "2000m"
+        cpu: "3000m"
 '''
 }
 
@@ -227,28 +236,28 @@ spec:
     image: jenkins/inbound-agent:3345.v03dee9b_f88fc-6
     resources:
       requests:
-        memory: "512Mi"
-        cpu: "200m"
+        memory: "256Mi"
+        cpu: "100m"
   - name: gitleaks
     image: zricethezav/gitleaks:latest
     command: ['sleep', '9999']
     resources:
       requests:
         memory: "512Mi"
-        cpu: "250m"
+        cpu: "100m"
       limits:
         memory: "2Gi"
         cpu: "1000m"
   - name: trivy
-    image: aquasec/trivy:0.69.3
+    image: aquasec/trivy:0.72.0
     command: ['sleep', '9999']
     resources:
       requests:
         memory: "1Gi"
-        cpu: "250m"
+        cpu: "100m"
       limits:
         memory: "4Gi"
-        cpu: "1000m"
+        cpu: "2000m"
 '''
 }
 
@@ -263,28 +272,28 @@ spec:
     image: jenkins/inbound-agent:3345.v03dee9b_f88fc-6
     resources:
       requests:
-        memory: "512Mi"
-        cpu: "200m"
+        memory: "256Mi"
+        cpu: "100m"
   - name: kaniko
     image: gcr.io/kaniko-project/executor:v1.23.2-debug
     command: ['sleep', '9999']
     resources:
       requests:
         memory: "4Gi"
-        cpu: "1000m"
+        cpu: "400m"
       limits:
         memory: "8Gi"
-        cpu: "2000m"
+        cpu: "3000m"
   - name: trivy
-    image: aquasec/trivy:0.69.3
+    image: aquasec/trivy:0.72.0
     command: ['sleep', '9999']
     resources:
       requests:
         memory: "1Gi"
-        cpu: "250m"
+        cpu: "100m"
       limits:
         memory: "4Gi"
-        cpu: "1000m"
+        cpu: "2000m"
 '''
 }
 
@@ -299,8 +308,8 @@ spec:
     image: jenkins/inbound-agent:3345.v03dee9b_f88fc-6
     resources:
       requests:
-        memory: "512Mi"
-        cpu: "200m"
+        memory: "256Mi"
+        cpu: "100m"
   - name: kubectl
     image: alpine/k8s:1.32.1
     command: ['cat']

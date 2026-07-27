@@ -1,0 +1,52 @@
+# Trivy baseline for eg-esign — reviewed 2026-07-27.
+#
+# The dependency scan (jenkins/security-scan.groovy) blocks on fixable
+# HIGH/CRITICAL findings. Everything listed here was triaged and could NOT be
+# resolved by a trivial version bump. Anything NOT listed here still fails the
+# build, so a newly-introduced vulnerability is caught.
+#
+# Fixed rather than ignored in this same change (16 -> 5 findings):
+#   axios 1.16.0 -> ^1.18.0                    (override)
+#   fast-uri 3.1.2 -> ^3.1.4                   (override)
+#   brace-expansion 1.1.12/5.0.7 -> ^5.0.8     (override)
+#   @opentelemetry/propagator-jaeger -> ^2.9.0 (override)
+#   next 16.2.6 -> 16.2.11                     (apps/docs, apps/openpage-api)
+#   sharp 0.34.5 -> ^0.35.0                    (packages/lib + override)
+#
+# Scope note: this file applies to the *filesystem* scan of the source tree.
+# Verified against the built image on 2026-07-27 — react-router, sharp and
+# brace-expansion ARE present in the runtime image, so these are real (if
+# low-reachability) exposures, not purely dev-tree noise. They are baselined
+# because no trivial fix exists, not because they are absent.
+#
+# Re-triage when the nightly upstream-sync bumps these dependencies.
+
+# react-router 7.18.1 -> 8.3.0
+# Not a trivial bump: react-router IS the application framework (apps/remix
+# runs React Router v7 in framework mode). A 7 -> 8 major upgrade is its own
+# project with route-module and typegen changes, not a CI-unblocking patch.
+# Reached here only as a transitive dep of fumadocs-core in apps/docs, which
+# does not ship.
+GHSA-qwww-vcr4-c8h2
+
+# postcss 8.4.31 -> 8.5.12 / 8.5.18
+# Nested inside `next` (apps/docs, apps/openpage-api) as
+# node_modules/next/node_modules/postcss. The root postcss is already 8.5.19
+# and the repo's existing `overrides.postcss: ^8.5.19` does not reach a
+# workspace-nested copy. Neither app is built into the container.
+CVE-2026-45623
+GHSA-r28c-9q8g-f849
+
+# brace-expansion 2.1.2 -> 5.0.8
+# The root copy is overridden to 5.0.8; three packages keep a nested 2.x that
+# npm `overrides` does not rewrite:
+#   @hono/vite-dev-server (dev server), filelist (jake), google-gax (grpc codegen)
+CVE-2026-14257
+
+# sharp 0.34.5 -> 0.35.0
+# packages/lib now declares 0.35.0 and there is an `overrides.sharp: ^0.35.0`,
+# but a 0.34.5 copy stays hoisted at node_modules/sharp: it arrives as an
+# optional dependency of `next`, and npm does not apply `overrides` to
+# optional deps resolved that way. `npm ls sharp` reports it as "invalid".
+# Removing it needs next's own sharp bump, not something this repo controls.
+GHSA-f88m-g3jw-g9cj
