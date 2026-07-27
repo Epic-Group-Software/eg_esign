@@ -1,35 +1,177 @@
+// eg-esign — Epic Group dedicated e-signature instance.
+//
+// Multibranch pipeline for the Jenkins "Epic Group" folder:
+//   PR       -> checks only (lint, unit tests, build/typecheck, security scan)
+//   staging  -> build image + deploy to eg-esign-staging  (esign-staging.epicgroup.ca)
+//   main     -> build image + deploy to eg-esign-prod     (esign.epicgroup.ca)
+//
+// Deploys to eg-k8s-01 (Epic Group AKS). This is separate from the root
+// Jenkinsfile, which builds and deploys the Davinci SaaS instance
+// (sign.davincisolutions.ai) — the two must not be conflated.
+//
+// Step logic lives in jenkins/*.groovy, following the house pattern in
+// Epic-Group-Software/Project-Operations.
+
+import groovy.json.JsonSlurper
+
 pipeline {
-    agent none  // Use per-stage pod agents for K8s dynamic scaling
+    agent none
 
     options {
         buildDiscarder(logRotator(numToKeepStr: '20'))
-        timeout(time: 60, unit: 'MINUTES')
-        withFolderProperties()  // Inherit Davinci folder defaults (unused for registry; see REGISTRY below)
-    }
-
-    triggers {
-        githubPush()
+        timeout(time: 90, unit: 'MINUTES')
+        timestamps()
     }
 
     environment {
-        // eg-esign registry (Epic Group ACR) — do NOT use the SaaS REGISTRY_HOSTNAME folder property
-        REGISTRY = 'epicregistry.azurecr.io'
-
-        // Image configuration
-        IMAGE_NAME = 'davinci-technology/eg-esign'
-
-        // Git credential
+        REGISTRY          = 'epicregistry.azurecr.io'
+        REGISTRY_USERNAME = 'epicregistry'
+        IMAGE_NAME        = 'epic-group-software/eg-esign'
         GIT_CREDENTIAL_ID = 'f1b484af-24eb-4f28-a57a-66db51117a73'
-
-        // Kubeconfig credential (eg AKS cluster)
-        KUBECONFIG_CREDENTIAL_ID = 'eg-aks-kubeconfig'
     }
 
     stages {
-        stage('Checkout') {
-            agent {
-                kubernetes {
-                    yaml """
+        stage('Init') {
+            agent { kubernetes { yaml podJnlp() } }
+            steps {
+                script {
+                    sh '''#!/bin/bash
+                        mkdir -p ~/.ssh
+                        ssh-keyscan -t rsa,ecdsa,ed25519 github.com > ~/.ssh/known_hosts 2>/dev/null
+                        chmod 600 ~/.ssh/known_hosts
+                    '''
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: scm.branches,
+                        extensions: scm.extensions,
+                        userRemoteConfigs: [[
+                            url: scm.userRemoteConfigs[0].url,
+                            credentialsId: env.GIT_CREDENTIAL_ID,
+                        ]],
+                    ])
+
+                    // Capture here, where GIT_COMMIT is guaranteed set. Later
+                    // stages run in fresh pods that unstash rather than check out.
+                    env.GIT_COMMIT_SHORT = env.GIT_COMMIT.take(7)
+
+                    def helpers = load 'jenkins/helpers.groovy'
+
+                    // On a PR, Jenkins builds a local merge commit whose SHA does
+                    // not exist on GitHub, so statuses posted against it would be
+                    // invisible. Resolve the real PR head instead.
+                    if (env.CHANGE_ID) {
+                        helpers.withGitHubCredentials {
+                            def body = sh(returnStdout: true, script: """#!/bin/bash
+                                curl -sS -u "\$GIT_USER:\$GIT_PASS" \
+                                    "https://api.github.com/repos/Epic-Group-Software/${helpers.getRepoName()}/pulls/${env.CHANGE_ID}"
+                            """)
+                            env.STATUS_COMMIT_SHA = new JsonSlurper().parseText(body)?.head?.sha
+                        }
+                        echo "PR head SHA for GitHub statuses: ${env.STATUS_COMMIT_SHA}"
+                    }
+
+                    // Branch -> environment mapping. Anything else is checks-only.
+                    if (env.BRANCH_NAME == 'main') {
+                        env.ENVN = 'prod'
+                        env.NAMESPACE = 'eg-esign-prod'
+                        env.HOST = 'esign.epicgroup.ca'
+                        env.TAG = 'prod'
+                        env.CRED = '-prod'
+                    } else if (env.BRANCH_NAME == 'staging') {
+                        env.ENVN = 'staging'
+                        env.NAMESPACE = 'eg-esign-staging'
+                        env.HOST = 'esign-staging.epicgroup.ca'
+                        env.TAG = 'staging'
+                        env.CRED = '-staging'
+                    }
+
+                    env.IMAGE_TAG = "${env.TAG ?: 'pr'}-${env.BUILD_NUMBER}-${env.GIT_COMMIT_SHORT}"
+
+                    echo """eg-esign build configuration:
+  Branch:    ${env.BRANCH_NAME}
+  PR:        ${env.CHANGE_ID ?: 'n/a'}
+  Env:       ${env.ENVN ?: 'checks only'}
+  Namespace: ${env.NAMESPACE ?: 'n/a'}
+  Image tag: ${env.IMAGE_TAG}"""
+
+                    stash includes: '**', name: 'source'
+                }
+            }
+        }
+
+        stage('Checks') {
+            parallel {
+                stage('Quality') {
+                    agent { kubernetes { yaml podNode() } }
+                    steps {
+                        unstash 'source'
+                        script {
+                            def checks = load 'jenkins/checks.groovy'
+                            checks()
+                        }
+                    }
+                }
+
+                stage('Security Scan') {
+                    agent { kubernetes { yaml podSecurity() } }
+                    options { timeout(time: 20, unit: 'MINUTES') }
+                    steps {
+                        unstash 'source'
+                        script {
+                            def helpers = load 'jenkins/helpers.groovy'
+                            helpers.withGitHubStatus('Security Scan') {
+                                def securityScan = load 'jenkins/security-scan.groovy'
+                                securityScan()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build Image') {
+            when { anyOf { branch 'main'; branch 'staging' } }
+            agent { kubernetes { yaml podKaniko() } }
+            steps {
+                unstash 'source'
+                script {
+                    def buildImage = load 'jenkins/build-image.groovy'
+                    buildImage()
+                }
+            }
+        }
+
+        stage('Deploy') {
+            when { anyOf { branch 'main'; branch 'staging' } }
+            agent { kubernetes { yaml podKubectl() } }
+            options { timeout(time: 25, unit: 'MINUTES') }
+            steps {
+                unstash 'source'
+                script {
+                    def deploy = load 'jenkins/deploy.groovy'
+                    deploy()
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "eg-esign pipeline succeeded" + (env.ENVN ? " — deployed to ${env.ENVN} (https://${env.HOST})" : '')
+        }
+        failure {
+            echo 'eg-esign pipeline failed. See the stage logs above.'
+        }
+    }
+}
+
+// --- Pod templates ------------------------------------------------------
+// Kept as functions so the stage blocks stay readable. The Jenkins Kubernetes
+// cloud provisions these into the Davinci cluster; the deploy stage then talks
+// to eg-k8s-01 through the epic-fleet-kubeconfig credential.
+
+def podJnlp() {
+    return '''
 apiVersion: v1
 kind: Pod
 spec:
@@ -38,65 +180,25 @@ spec:
     image: jenkins/inbound-agent:3345.v03dee9b_f88fc-6
     resources:
       requests:
-        memory: "256Mi"
-        cpu: "100m"
-"""
-                }
-            }
-            steps {
-                // Add GitHub host keys before checkout
-                sh '''
-                    mkdir -p ~/.ssh
-                    ssh-keyscan -t rsa,ecdsa,ed25519 github.com > ~/.ssh/known_hosts 2>/dev/null
-                    chmod 600 ~/.ssh/known_hosts
-                '''
-                checkout([
-                    $class: 'GitSCM',
-                    branches: scm.branches,
-                    extensions: scm.extensions,
-                    userRemoteConfigs: [[
-                        url: scm.userRemoteConfigs[0].url,
-                        credentialsId: env.GIT_CREDENTIAL_ID
-                    ]]
-                ])
-                script {
-                    // Capture the short SHA here, right after checkout, where GIT_COMMIT
-                    // is guaranteed to be set. The Resolve Env stage runs in a fresh pod
-                    // with no checkout, so GIT_COMMIT would be null there.
-                    env.GIT_COMMIT_SHORT = GIT_COMMIT.take(7)
-                }
-                stash includes: '**', name: 'source'
-            }
-        }
+        memory: "512Mi"
+        cpu: "200m"
+'''
+}
 
-        stage('Resolve Env') {
-            agent {
-                kubernetes {
-                    yaml "apiVersion: v1\nkind: Pod\nspec:\n  containers:\n  - name: jnlp\n    image: jenkins/inbound-agent:3345.v03dee9b_f88fc-6"
-                }
-            }
-            steps {
-                script {
-                    if (env.BRANCH_NAME == 'main') {
-                        env.ENVN = 'prod';    env.NAMESPACE = 'eg-esign-prod';    env.HOST = 'esign.epicgroup.ca';         env.TAG = 'prod';    env.CRED = '-prod'
-                    } else if (env.BRANCH_NAME == 'staging') {
-                        env.ENVN = 'staging'; env.NAMESPACE = 'eg-esign-staging'; env.HOST = 'esign-staging.epicgroup.ca'; env.TAG = 'staging'; env.CRED = '-staging'
-                    } else {
-                        error "Branch ${env.BRANCH_NAME} is not an eg-esign deploy branch"
-                    }
-                    env.IMAGE_TAG = "${env.TAG}-${BUILD_NUMBER}-${env.GIT_COMMIT_SHORT}"
-                }
-            }
-        }
-
-        stage('Build Check') {
-            agent {
-                kubernetes {
-                    yaml """
+def podNode() {
+    // 10Gi ceiling: tsc over this monorepo needs an 8Gi old-space. The
+    // encryption keys are build-time dummies, never used at runtime.
+    return '''
 apiVersion: v1
 kind: Pod
 spec:
   containers:
+  - name: jnlp
+    image: jenkins/inbound-agent:3345.v03dee9b_f88fc-6
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "200m"
   - name: node
     image: node:22-alpine
     command: ['sleep', '9999']
@@ -112,45 +214,57 @@ spec:
       limits:
         memory: "10Gi"
         cpu: "2000m"
-"""
-                }
-            }
-            steps {
-                unstash 'source'
-                container('node') {
-                    sh '''
-                        apk add --no-cache openssl libc6-compat jq
-                        # node:22-alpine ships npm 10.9.8, but this repo requires
-                        # npm >=11.11.0 (see package.json engines). npm 10 mis-resolves
-                        # the apps/docs typescript ^5.9.3 / root 5.6.2 overlap and fails
-                        # `npm ci` with "Missing: typescript@5.9.3 from lock file".
-                        npm install -g npm@11.11.0
-                        npm ci
-                        npm run translate:compile
-                        # The monorepo typecheck (tsc) exhausts Node's default heap and
-                        # aborts with "JavaScript heap out of memory" (exit 134). Raise
-                        # the old-space limit; the pod allows up to 10Gi.
-                        export NODE_OPTIONS="--max-old-space-size=8192"
-                        npm run build
-                    '''
-                }
-            }
-        }
+'''
+}
 
-        stage('Build Image') {
-            when {
-                anyOf {
-                    branch 'main'
-                    branch 'staging'
-                }
-            }
-            agent {
-                kubernetes {
-                    yaml '''
+def podSecurity() {
+    return '''
 apiVersion: v1
 kind: Pod
 spec:
   containers:
+  - name: jnlp
+    image: jenkins/inbound-agent:3345.v03dee9b_f88fc-6
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "200m"
+  - name: gitleaks
+    image: zricethezav/gitleaks:latest
+    command: ['sleep', '9999']
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+  - name: trivy
+    image: aquasec/trivy:0.69.3
+    command: ['sleep', '9999']
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "250m"
+      limits:
+        memory: "4Gi"
+        cpu: "1000m"
+'''
+}
+
+def podKaniko() {
+    // trivy rides along so the pushed image is scanned without a second pod.
+    return '''
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: jnlp
+    image: jenkins/inbound-agent:3345.v03dee9b_f88fc-6
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "200m"
   - name: kaniko
     image: gcr.io/kaniko-project/executor:v1.23.2-debug
     command: ['sleep', '9999']
@@ -161,63 +275,35 @@ spec:
       limits:
         memory: "8Gi"
         cpu: "2000m"
+  - name: trivy
+    image: aquasec/trivy:0.69.3
+    command: ['sleep', '9999']
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "250m"
+      limits:
+        memory: "4Gi"
+        cpu: "1000m"
 '''
-                }
-            }
-            steps {
-                unstash 'source'
-                withCredentials([
-                    string(credentialsId: 'epicregistry-username', variable: 'REGISTRY_USERNAME'),
-                    string(credentialsId: 'epicregistry-token', variable: 'REGISTRY_TOKEN')
-                ]) {
-                    container('kaniko') {
-                        sh '''
-                            # Create docker config for Kaniko
-                            mkdir -p /kaniko/.docker
-                            AUTH=$(echo -n "${REGISTRY_USERNAME}:${REGISTRY_TOKEN}" | base64 | tr -d '\\n')
-                            cat > /kaniko/.docker/config.json << EOF
-{
-    "auths": {
-        "${REGISTRY}": {
-            "auth": "${AUTH}"
-        }
-    }
 }
-EOF
-                            # Build and push eg-esign image
-                            # --single-snapshot reduces memory usage by taking one final snapshot
-                            /kaniko/executor \
-                                --context=. \
-                                --dockerfile=./docker/Dockerfile \
-                                --destination=${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} \
-                                --destination=${REGISTRY}/${IMAGE_NAME}:${TAG} \
-                                --cache=true \
-                                --cache-ttl=168h \
-                                --cache-repo=${REGISTRY}/${IMAGE_NAME}-cache \
-                                --single-snapshot
-                        '''
-                    }
-                }
-            }
-        }
 
-        stage('Deploy') {
-            when {
-                anyOf {
-                    branch 'main'
-                    branch 'staging'
-                }
-            }
-            agent {
-                kubernetes {
-                    yaml """
+def podKubectl() {
+    // alpine/k8s bundles both kubectl and kustomize.
+    return '''
 apiVersion: v1
 kind: Pod
 spec:
   containers:
+  - name: jnlp
+    image: jenkins/inbound-agent:3345.v03dee9b_f88fc-6
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "200m"
   - name: kubectl
     image: alpine/k8s:1.32.1
-    command: [cat]
+    command: ['cat']
     tty: true
     resources:
       requests:
@@ -226,153 +312,5 @@ spec:
       limits:
         memory: "512Mi"
         cpu: "500m"
-"""
-                }
-            }
-            steps {
-                unstash 'source'
-                withCredentials([
-                    file(credentialsId: env.KUBECONFIG_CREDENTIAL_ID, variable: 'KUBECONFIG_FILE'),
-                    string(credentialsId: 'epicregistry-username', variable: 'REGISTRY_USERNAME'),
-                    string(credentialsId: 'epicregistry-token', variable: 'REGISTRY_TOKEN'),
-                    string(credentialsId: "eg-esign-nextauth-secret${env.CRED}", variable: 'NEXTAUTH_SECRET'),
-                    string(credentialsId: "eg-esign-encryption-key${env.CRED}", variable: 'ENCRYPTION_KEY'),
-                    string(credentialsId: "eg-esign-encryption-key-2${env.CRED}", variable: 'ENCRYPTION_KEY_2'),
-                    string(credentialsId: "eg-esign-postgres-password${env.CRED}", variable: 'POSTGRES_PASSWORD'),
-                    string(credentialsId: "eg-esign-minio-password${env.CRED}", variable: 'MINIO_PASSWORD'),
-                    string(credentialsId: "eg-esign-smtp-password${env.CRED}", variable: 'SMTP_PASSWORD'),
-                    string(credentialsId: "eg-esign-cert-passphrase${env.CRED}", variable: 'CERT_PASSPHRASE'),
-                    file(credentialsId: "eg-esign-certificate-p12${env.CRED}", variable: 'CERT_FILE'),
-                    string(credentialsId: "eg-esign-oidc-client-id${env.CRED}", variable: 'OIDC_CLIENT_ID'),
-                    string(credentialsId: "eg-esign-oidc-client-secret${env.CRED}", variable: 'OIDC_CLIENT_SECRET')
-                ]) {
-                    container('kubectl') {
-                        sh '''
-                            export KUBECONFIG=${KUBECONFIG_FILE}
-                            set -e  # Exit on first error
-
-                            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-                            echo "🚀 Deploying eg-esign to ${ENVN}"
-                            echo "  Namespace: ${NAMESPACE}"
-                            echo "  Image Tag: ${IMAGE_TAG}"
-                            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-                            # Verify cluster connection
-                            kubectl cluster-info
-
-                            # Create namespace if not exists
-                            kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
-
-                            # Create/update ACR pull secret
-                            echo "🔑 Creating ACR pull secret..."
-                            kubectl create secret docker-registry acr-pull-secret \
-                                --namespace=${NAMESPACE} \
-                                --docker-server=${REGISTRY} \
-                                --docker-username=${REGISTRY_USERNAME} \
-                                --docker-password=${REGISTRY_TOKEN} \
-                                --dry-run=client -o yaml | kubectl apply -f -
-
-                            # Create/update secrets
-                            echo "🔐 Creating secrets..."
-                            kubectl create secret generic eg-esign-secrets \
-                                --namespace=${NAMESPACE} \
-                                --from-literal=NEXTAUTH_SECRET="${NEXTAUTH_SECRET}" \
-                                --from-literal=NEXT_PRIVATE_ENCRYPTION_KEY="${ENCRYPTION_KEY}" \
-                                --from-literal=NEXT_PRIVATE_ENCRYPTION_SECONDARY_KEY="${ENCRYPTION_KEY_2}" \
-                                --from-literal=POSTGRES_PASSWORD="${POSTGRES_PASSWORD}" \
-                                --from-literal=MINIO_ROOT_PASSWORD="${MINIO_PASSWORD}" \
-                                --from-literal=NEXT_PRIVATE_UPLOAD_SECRET_ACCESS_KEY="${MINIO_PASSWORD}" \
-                                --from-literal=NEXT_PRIVATE_SMTP_PASSWORD="${SMTP_PASSWORD}" \
-                                --from-literal=NEXT_PRIVATE_SIGNING_PASSPHRASE="${CERT_PASSPHRASE}" \
-                                --from-literal=NEXT_PRIVATE_OIDC_CLIENT_ID="${OIDC_CLIENT_ID}" \
-                                --from-literal=NEXT_PRIVATE_OIDC_CLIENT_SECRET="${OIDC_CLIENT_SECRET}" \
-                                --dry-run=client -o yaml | kubectl apply -f -
-
-                            # Create certificate secret from file
-                            kubectl create secret generic eg-esign-certificate \
-                                --namespace=${NAMESPACE} \
-                                --from-file=cert.p12=${CERT_FILE} \
-                                --dry-run=client -o yaml | kubectl apply -f -
-
-                            # Apply K8s manifests
-                            echo "📦 Applying Kubernetes manifests..."
-                            kubectl apply -k k8s/eg-esign/overlays/${ENVN}
-
-                            # Wait for stateful dependencies (soft-fail: first-deploy PVC
-                            # provisioning + image pull can exceed the timeout; the app
-                            # rollout status below still guards correctness)
-                            echo "⏳ Waiting for Postgres..."
-                            kubectl -n ${NAMESPACE} rollout status statefulset/eg-esign-postgres --timeout=5m || true
-                            echo "⏳ Waiting for MinIO..."
-                            kubectl -n ${NAMESPACE} rollout status statefulset/minio --timeout=3m || true
-
-                            # Update image tag in deployment
-                            echo "🔄 Updating image to ${IMAGE_TAG}..."
-                            kubectl set image deployment/eg-esign \
-                                app=${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} \
-                                -n ${NAMESPACE}
-
-                            # Wait for rollout
-                            echo "⏳ Waiting for deployment rollout..."
-                            kubectl rollout status deployment/eg-esign -n ${NAMESPACE} --timeout=10m
-
-                            # Health check verification
-                            echo "🏥 Verifying health..."
-                            # /api/health returns {"status":<overall>,"timestamp":...,"checks":{"database":{"status":...},"certificate":{"status":...}}}
-                            # with "status" as the FIRST key in the body. The pattern is anchored
-                            # at position 0 so nested checks.*.status fields (which never open the
-                            # body) can never satisfy it — a bare `grep -q ok` would wrongly pass
-                            # a top-level "error" response whose untouched checks.certificate still
-                            # defaults to "ok". It deliberately accepts top-level "warning" (e.g.
-                            # cert unavailable, still HTTP 200) to stay coherent with the pod's own
-                            # readinessProbe, which passes on any 2xx — only top-level "error"
-                            # (HTTP 500) fails the deploy.
-                            HEALTH_OK=false
-                            for i in $(seq 1 30); do
-                                if kubectl exec deployment/eg-esign -n ${NAMESPACE} -- \
-                                    wget -q -O- http://localhost:3000/api/health 2>/dev/null | grep -qE '^\\{"status":"(ok|warning)"'; then
-                                    echo "✅ Health check passed"
-                                    HEALTH_OK=true
-                                    break
-                                fi
-                                echo "Waiting for health... ($i/30)"
-                                sleep 10
-                            done
-
-                            if [ "$HEALTH_OK" != "true" ]; then
-                                echo "❌ Health check failed - rolling back"
-                                kubectl rollout undo deployment/eg-esign -n ${NAMESPACE}
-                                exit 1
-                            fi
-
-                            # Final verification
-                            echo ""
-                            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-                            echo "✅ Deployment Complete!"
-                            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-                            echo ""
-                            echo "Pod Status:"
-                            kubectl get pods -n ${NAMESPACE}
-                            echo ""
-                            echo "🌐 URL: https://${HOST}"
-                        '''
-                    }
-                }
-            }
-        }
-    }
-
-    post {
-        success {
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "✅ Pipeline Successful!"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        }
-        failure {
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "❌ Pipeline Failed!"
-            echo "Check the logs above for details."
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        }
-    }
+'''
 }

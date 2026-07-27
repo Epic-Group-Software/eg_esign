@@ -10,4 +10,3 @@ resources:
   - postgres-pvc.yaml
   - minio-statefulset.yaml
   - minio-pvc.yaml
-  - pdb.yaml

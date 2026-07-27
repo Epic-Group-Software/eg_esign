@@ -56,33 +56,16 @@ spec:
                   name: eg-esign-secrets
                   key: MINIO_ROOT_PASSWORD
 
-        # Init container to run database migrations
-        - name: migrate
-          image: epicregistry.azurecr.io/davinci-technology/eg-esign
-          command:
-            - npx
-            - prisma
-            - migrate
-            - deploy
-            - --schema
-            - /app/packages/prisma/schema.prisma
-          envFrom:
-            - configMapRef:
-                name: eg-esign-config
-          env:
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: eg-esign-secrets
-                  key: POSTGRES_PASSWORD
-            - name: NEXT_PRIVATE_DATABASE_URL
-              value: "postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(POSTGRES_DB)?sslmode=$(DB_SSLMODE)"
-            - name: NEXT_PRIVATE_DIRECT_DATABASE_URL
-              value: "postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(POSTGRES_DB)?sslmode=$(DB_SSLMODE)"
+        # NOTE: there is deliberately no `migrate` init container. The image
+        # entrypoint (docker/start.sh) already runs `prisma migrate deploy` on
+        # every boot, so an init container would run migrations twice. Worse,
+        # the deploy pins the immutable image tag via kustomize while an init
+        # container is easy to leave on a moving tag — the two could then run
+        # different code against the same database.
 
       containers:
         - name: app
-          image: epicregistry.azurecr.io/davinci-technology/eg-esign
+          image: epicregistry.azurecr.io/epic-group-software/eg-esign
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
@@ -197,12 +180,20 @@ spec:
             items:
               - key: cert.p12
                 path: cert.p12
-            defaultMode: 0400
+            # 0440, not 0400: files projected from a secret are owned root:fsGroup,
+            # so owner-only permissions leave the application no read path at all
+            # and signing fails silently at runtime. Group-read + runAsGroup ==
+            # fsGroup is what actually makes the cert readable.
+            defaultMode: 0440
 
       securityContext:
-        fsGroup: 1000
+        # Must match the image. docker/Dockerfile creates and runs as uid/gid
+        # 1001 (`adduser --system --uid 1001 nodejs`); forcing 1000 here left
+        # the process unable to read its own signing certificate.
+        fsGroup: 1001
         fsGroupChangePolicy: OnRootMismatch
-        runAsUser: 1000
+        runAsUser: 1001
+        runAsGroup: 1001
 
       imagePullSecrets:
         - name: acr-pull-secret

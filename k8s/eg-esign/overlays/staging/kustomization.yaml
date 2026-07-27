@@ -4,7 +4,7 @@ namespace: eg-esign-staging
 resources:
   - ../../base
 images:
-  - name: epicregistry.azurecr.io/davinci-technology/eg-esign
+  - name: epicregistry.azurecr.io/epic-group-software/eg-esign
     newTag: staging
 patches:
   - path: configmap-patch.yaml
