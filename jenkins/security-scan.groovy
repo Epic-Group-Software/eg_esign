@@ -1,21 +1,15 @@
-// Secret scanning (gitleaks) + dependency CVE scanning (Trivy) on the source tree.
+// Secret scanning (gitleaks) + dependency CVE scanning (Trivy).
 //
-// Adapted from Epic-Group-Software/Project-Operations/jenkins/security-scan.groovy.
-// That version shells out to `docker run` on the static `docker` agent; here
-// the scanners are containers in the pod spec instead, so no Docker socket is
-// needed. Findings are formatted with jq rather than python3 (not in these images).
-//
-// Usage: def securityScan = load 'jenkins/security-scan.groovy'; securityScan()
+// Adapted from Project-Operations/jenkins/security-scan.groovy, but the
+// scanners are pod containers rather than `docker run`, so no Docker socket
+// is needed. Formatting uses jq — these images have no python3.
 
 def call() {
     def helpers = load 'jenkins/helpers.groovy'
     def outputFile = helpers.outputFileFor('Security Scan')
     def failures = []
 
-    // --- Gitleaks -------------------------------------------------------
-    // gitleaks.toml extends the default ruleset and excludes dependency trees
-    // plus upstream Documenso fixtures (the public example cert.p12, the docs
-    // tree's illustrative API keys). Verified clean on this tree 2026-07-27.
+    // gitleaks.toml excludes dependency trees and upstream Documenso fixtures.
     def gitleaksStatus = container('gitleaks') {
         sh(returnStatus: true, script: '''#!/bin/sh
             gitleaks detect \
@@ -41,11 +35,8 @@ def call() {
         failures.add(table.trim())
     }
 
-    // --- Trivy filesystem ----------------------------------------------
-    // node_modules is skipped: Trivy reads package-lock.json for the full
-    // dependency graph, so walking the installed tree adds many minutes and
-    // no findings. --ignore-unfixed keeps this actionable — we only fail on
-    // CVEs that an upgrade can actually resolve.
+    // node_modules is skipped — Trivy reads package-lock.json for the full
+    // graph, and walking the installed tree adds minutes for no extra findings.
     def trivyStatus = container('trivy') {
         sh(returnStatus: true, script: '''#!/bin/sh
             trivy fs . \
@@ -66,10 +57,9 @@ def call() {
         def table = container('trivy') {
             sh(returnStdout: true, script: '''#!/bin/sh
                 COUNT=$(jq '[.Results[]?.Vulnerabilities[]?] | length' .ci-trivy-fs.json)
+                # Non-zero with no findings means the scanner itself failed
+                # (DB download, rate limit) — don't report a phantom vuln.
                 if [ "$COUNT" = "0" ] || [ -z "$COUNT" ]; then
-                    # Non-zero exit with no parsed vulnerabilities means the
-                    # scanner itself failed (DB download, rate limit). Say so
-                    # rather than reporting a phantom vulnerability.
                     echo "### Trivy: scan did not complete"
                     echo
                     echo "Trivy exited non-zero but produced no findings. See the build log."

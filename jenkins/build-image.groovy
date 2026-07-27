@@ -1,11 +1,6 @@
-// Build the eg-esign container with Kaniko, push to the Epic Group ACR, then
-// scan the pushed image with Trivy.
-//
-// Kaniko (not `docker build`) because these run on Kubernetes pod agents with
-// no Docker socket. Trivy scans the pushed tag over the registry API for the
-// same reason.
-//
-// Usage: def buildImage = load 'jenkins/build-image.groovy'; buildImage()
+// Kaniko build + push to Epic Group ACR, then Trivy scan of the pushed image.
+// Kaniko rather than `docker build` because these are pod agents with no
+// Docker socket; Trivy scans over the registry API for the same reason.
 
 def call() {
     def helpers = load 'jenkins/helpers.groovy'
@@ -19,9 +14,8 @@ def call() {
                 cat > /kaniko/.docker/config.json <<EOF
 {"auths":{"${REGISTRY}":{"auth":"${AUTH}"}}}
 EOF
-                # --single-snapshot keeps peak memory down on this large tree.
-                # Two destinations: the immutable per-build tag that the deploy
-                # actually pins, and the moving env tag for humans.
+                # Two tags: the immutable per-build one the deploy pins, and
+                # the moving env tag. --single-snapshot caps peak memory.
                 /kaniko/executor \
                     --context=. \
                     --dockerfile=./docker/Dockerfile \
@@ -34,22 +28,21 @@ EOF
             '''
         }
 
-        // Scan the tag we just pushed. Failing here blocks the deploy, which is
-        // the point: an image with a fixable HIGH/CRITICAL never reaches a cluster.
+        // Failing here blocks the deploy — an image with a fixable
+        // HIGH/CRITICAL never reaches a cluster.
         helpers.withGitHubStatus('Image Scan') {
             def outputFile = helpers.outputFileFor('Image Scan')
             def status = container('trivy') {
                 sh(returnStatus: true, script: '''#!/bin/sh
                     export TRIVY_USERNAME="${REGISTRY_USERNAME}"
                     export TRIVY_PASSWORD="${REGISTRY_TOKEN}"
-                    # --timeout: the default 5m is not enough for this image.
-                    # It carries a production node_modules tree, and Trivy
-                    # analyses every package.json in it; the default deadline
-                    # aborts the scan with "context deadline exceeded".
+                    # Default 5m aborts with "context deadline exceeded" on
+                    # this image's node_modules tree.
                     trivy image "${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}" \
                         --scanners vuln \
                         --severity HIGH,CRITICAL \
                         --ignore-unfixed \
+                        --ignorefile .trivyignore \
                         --timeout 30m \
                         --exit-code 1 \
                         --format json \

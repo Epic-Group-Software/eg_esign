@@ -1,16 +1,11 @@
-// eg-esign — Epic Group dedicated e-signature instance.
+// eg-esign — Epic Group e-signature instance. Deploys to eg-k8s-01.
 //
-// Multibranch pipeline for the Jenkins "Epic Group" folder:
-//   PR       -> checks only (lint, unit tests, build/typecheck, security scan)
-//   staging  -> build image + deploy to eg-esign-staging  (esign-staging.epicgroup.ca)
-//   main     -> build image + deploy to eg-esign-prod     (esign.epicgroup.ca)
+//   PR       -> checks only
+//   staging  -> build + deploy to eg-esign-staging (esign-staging.epicgroup.ca)
+//   main     -> build + deploy to eg-esign-prod    (esign.epicgroup.ca)
 //
-// Deploys to eg-k8s-01 (Epic Group AKS). This is separate from the root
-// Jenkinsfile, which builds and deploys the Davinci SaaS instance
-// (sign.davincisolutions.ai) — the two must not be conflated.
-//
-// Step logic lives in jenkins/*.groovy, following the house pattern in
-// Epic-Group-Software/Project-Operations.
+// Separate from the root Jenkinsfile, which deploys the Davinci SaaS instance.
+// Step logic lives in jenkins/*.groovy.
 
 import groovy.json.JsonSlurper
 
@@ -50,15 +45,13 @@ pipeline {
                         ]],
                     ])
 
-                    // Capture here, where GIT_COMMIT is guaranteed set. Later
-                    // stages run in fresh pods that unstash rather than check out.
+                    // Capture here — later stages unstash rather than check out.
                     env.GIT_COMMIT_SHORT = env.GIT_COMMIT.take(7)
 
                     def helpers = load 'jenkins/helpers.groovy'
 
-                    // On a PR, Jenkins builds a local merge commit whose SHA does
-                    // not exist on GitHub, so statuses posted against it would be
-                    // invisible. Resolve the real PR head instead.
+                    // Jenkins' PR merge-commit SHA doesn't exist on GitHub, so
+                    // statuses against it would be invisible. Use the PR head.
                     if (env.CHANGE_ID) {
                         helpers.withGitHubCredentials {
                             def body = sh(returnStdout: true, script: """#!/bin/bash
@@ -70,7 +63,7 @@ pipeline {
                         echo "PR head SHA for GitHub statuses: ${env.STATUS_COMMIT_SHA}"
                     }
 
-                    // Branch -> environment mapping. Anything else is checks-only.
+                    // Anything not listed here is checks-only.
                     if (env.BRANCH_NAME == 'main') {
                         env.ENVN = 'prod'
                         env.NAMESPACE = 'eg-esign-prod'
@@ -86,6 +79,16 @@ pipeline {
                     }
 
                     env.IMAGE_TAG = "${env.TAG ?: 'pr'}-${env.BUILD_NUMBER}-${env.GIT_COMMIT_SHORT}"
+
+                    // Mark every check pending up front so all of them appear
+                    // on the PR immediately. Otherwise the ones that run later
+                    // in the shared Quality pod stay invisible until the
+                    // earlier ones finish.
+                    if (env.CHANGE_ID) {
+                        ['Lint', 'Unit Tests', 'Build & Typecheck', 'Security Scan'].each {
+                            helpers.notifyGitHub(it, 'pending', 'Queued')
+                        }
+                    }
 
                     echo """eg-esign build configuration:
   Branch:    ${env.BRANCH_NAME}
@@ -166,18 +169,11 @@ pipeline {
 }
 
 // --- Pod templates ------------------------------------------------------
-// Kept as functions so the stage blocks stay readable. The Jenkins Kubernetes
-// cloud provisions these into the Davinci cluster; the deploy stage then talks
-// to eg-k8s-01 through the epic-fleet-kubeconfig credential.
-//
-// CPU *requests* are deliberately far below the limits. The Davinci build
-// cluster runs 6 of 7 schedulable nodes at 91-99% of requested CPU (memory is
-// only 21-43%), so a 1000m request leaves a pod Pending with "Insufficient
-// cpu" — which is exactly how the first eg-esign build stalled. Requests are
-// scheduling reservations, not throttles: these pods still burst to the limit
-// once placed, and the npm build is memory-bound rather than CPU-bound.
-// If the cluster gains capacity, raising the requests back would reduce
-// noisy-neighbour contention during builds.
+// CPU requests sit far below the limits on purpose: the Davinci build cluster
+// runs 6 of 7 nodes at 91-99% requested CPU (memory only 21-43%), so a 1000m
+// request leaves pods Pending on "Insufficient cpu". Requests are scheduling
+// reservations, not throttles — these still burst to the limit, and the npm
+// build is memory-bound. Raise them again if the cluster gains capacity.
 
 def podJnlp() {
     return '''
@@ -195,8 +191,7 @@ spec:
 }
 
 def podNode() {
-    // 10Gi ceiling: tsc over this monorepo needs an 8Gi old-space. The
-    // encryption keys are build-time dummies, never used at runtime.
+    // 10Gi: tsc needs an 8Gi old-space. Encryption keys are build-time dummies.
     return '''
 apiVersion: v1
 kind: Pod
@@ -262,7 +257,7 @@ spec:
 }
 
 def podKaniko() {
-    // trivy rides along so the pushed image is scanned without a second pod.
+    // trivy rides along to scan the pushed image without a second pod.
     return '''
 apiVersion: v1
 kind: Pod
@@ -298,7 +293,7 @@ spec:
 }
 
 def podKubectl() {
-    // alpine/k8s bundles both kubectl and kustomize.
+    // alpine/k8s bundles kubectl and kustomize.
     return '''
 apiVersion: v1
 kind: Pod

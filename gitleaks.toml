@@ -1,21 +1,17 @@
 # Gitleaks config for eg-esign CI (jenkins/security-scan.groovy).
+# Extends the default ruleset; adds path exclusions only.
 #
-# Extends the upstream default ruleset and only adds path exclusions. The scan
-# runs with --no-git against the working tree, so it must skip directories that
-# are not source: dependency trees, build output, and the checked-in test
-# fixtures that upstream Documenso ships (a deliberately-public example signing
-# certificate and .env.example placeholders).
+# NOTE: paths are matched against the path gitleaks was given, which is
+# absolute when scanning a mounted directory. Do not anchor with ^.
 
 [extend]
 useDefault = true
 
 [allowlist]
 description = "Non-source paths and known-public upstream test fixtures"
-# NOTE: gitleaks matches these against the path it was given, which is absolute
-# (/repo/...) when scanning a mounted directory. Do not anchor with ^.
 paths = [
-    # Dependency and build output — absent from a clean checkout, but the CI
-    # workspace is reused across builds.
+    # Dependency and build output — absent from a clean checkout, but CI
+    # workspaces are reused.
     '''(^|/)node_modules/''',
     '''(^|/)\.git/''',
     '''(^|/)dist/''',
@@ -24,18 +20,18 @@ paths = [
     '''(^|/)generated/''',
     '''package-lock\.json$''',
 
-    # Upstream Documenso fixtures and docs. apps/remix/example/cert.p12 is a
-    # publicly-distributed self-signed cert used by the e2e suite; .env.example
-    # holds placeholders ("CAFEBABE", "DEADBEEF"); the docs tree is full of
-    # illustrative API keys and curl -H "Authorization: ..." snippets.
+    # Upstream Documenso fixtures and docs: apps/remix/example/cert.p12 is a
+    # publicly-distributed self-signed e2e cert, .env.example holds
+    # placeholders (CAFEBABE/DEADBEEF), and the docs tree is full of
+    # illustrative API keys and curl auth-header snippets.
     '''(^|/)apps/remix/example/''',
     '''(^|/)apps/docs/content/''',
     '''(^|/)packages/app-tests/''',
     '''(^|/)patches/''',
     '''\.env\.example$''',
 
-    # This pipeline's own `curl -u "$GIT_USER:$GIT_PASS"` calls, which are
-    # credential *references*, not credentials.
+    # This pipeline's own `curl -u "$GIT_USER:$GIT_PASS"` — credential
+    # references, not credentials.
     '''(^|/)jenkins/.*\.groovy$''',
     '''(^|/)tools/upstream-sync/''',
 ]

@@ -1,10 +1,9 @@
-// Shared utilities for the eg-esign Jenkins pipeline (Jenkinsfile.eg).
+// GitHub commit-status and PR-comment helpers for Jenkinsfile.eg.
 // Usage: def helpers = load 'jenkins/helpers.groovy'
 //
-// Adapted from Epic-Group-Software/Project-Operations/jenkins/helpers.groovy.
-// Deliberately smaller: JSON is built in Groovy via JsonOutput rather than by
-// shelling out to python3, because these run in the jnlp sidecar of a
-// Kubernetes pod agent, which has curl and git but no python.
+// Adapted from Project-Operations/jenkins/helpers.groovy. JSON is built with
+// JsonOutput instead of python3 — these run in the jnlp sidecar, which has
+// curl but no python.
 
 import groovy.json.JsonOutput
 
@@ -13,8 +12,8 @@ def getRepoName() {
     return parts.length > 1 ? parts[parts.length - 2] : parts[0]
 }
 
-// For PRs, Jenkins builds a local merge commit whose SHA does not exist on
-// GitHub. STATUS_COMMIT_SHA is the real PR head, resolved in the Init stage.
+// STATUS_COMMIT_SHA is the real PR head (see Init stage); GIT_COMMIT on a PR
+// is a local merge commit that doesn't exist on GitHub.
 def getCommitSha() {
     return env.STATUS_COMMIT_SHA ?: env.GIT_COMMIT
 }
@@ -29,9 +28,7 @@ def withGitHubCredentials(Closure body) {
     }
 }
 
-// POST a JSON body to the GitHub API. The body goes through a file so it is
-// never interpolated into a shell command line — payloads contain arbitrary
-// build output, including quotes and newlines.
+// Body goes through a file — payloads contain arbitrary build output.
 def githubPost(String path, Map payload) {
     writeFile file: '.ci-gh-payload.json', text: JsonOutput.toJson(payload)
     withGitHubCredentials {
@@ -48,7 +45,7 @@ def githubPost(String path, Map payload) {
 def notifyGitHub(String context, String state, String description) {
     def sha = getCommitSha()
     if (!sha) {
-        echo "No commit SHA available — skipping GitHub status for '${context}'"
+        echo "No commit SHA — skipping GitHub status for '${context}'"
         return
     }
     try {
@@ -56,11 +53,10 @@ def notifyGitHub(String context, String state, String description) {
             state      : state,
             context    : context,
             target_url : env.BUILD_URL,
-            // GitHub truncates at 140 chars and rejects longer values outright.
-            description: description.take(139),
+            description: description.take(139),  // GitHub rejects longer
         ])
     } catch (err) {
-        echo "WARNING: could not post GitHub status '${context}': ${err.message}"
+        echo "WARNING: GitHub status '${context}' failed: ${err.message}"
     }
 }
 
@@ -78,7 +74,7 @@ def postPRComment(String context, String body) {
     try {
         githubPost("issues/${env.CHANGE_ID}/comments", [body: full])
     } catch (err) {
-        echo "WARNING: could not post PR comment for '${context}': ${err.message}"
+        echo "WARNING: PR comment for '${context}' failed: ${err.message}"
     }
 }
 
@@ -94,16 +90,9 @@ def truncateOutput(String output, int maxLen = 60000) {
 }
 
 /**
- * Run one check, reporting its own GitHub commit status and PR comment.
- *
- * Unlike Project-Operations — which gets independent statuses by giving every
- * check its own parallel branch and therefore its own agent — the eg-esign
- * checks share a single pod so that `npm ci` runs once instead of three times.
- * Sharing a pod means running sequentially, so a plain throw would leave every
- * later check unreported. Failures are recorded here and re-raised by
- * failIfAny() once all checks have had their turn.
- *
- * Returns true on success, false on failure.
+ * Run one check with its own GitHub status, recording failures instead of
+ * throwing so later checks in the same pod still run and report.
+ * Re-raised by failIfAny().
  */
 def runCheck(List failures, String context, Closure body) {
     notifyGitHub(context, 'pending', "Running ${context}...")
@@ -128,7 +117,7 @@ def failIfAny(List failures) {
     }
 }
 
-/** Single-check wrapper for stages that own their agent (e.g. Security Scan). */
+/** Single-check wrapper for stages that own their agent. */
 def withGitHubStatus(String context, Closure body) {
     notifyGitHub(context, 'pending', "Running ${context}...")
     try {

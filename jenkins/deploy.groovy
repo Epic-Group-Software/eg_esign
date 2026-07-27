@@ -1,14 +1,10 @@
-// Deploy eg-esign to the Epic Group AKS cluster (eg-k8s-01).
+// Deploy eg-esign to eg-k8s-01 (Epic Group AKS).
 //
-// Kubeconfig comes from `epic-fleet-kubeconfig` — the same global credential
-// Project-Operations uses to reach this cluster. Per-environment app secrets
-// come from job-scoped credentials suffixed -staging / -prod (env.CRED).
-//
-// Usage: def deploy = load 'jenkins/deploy.groovy'; deploy()
+// Kubeconfig is epic-fleet-kubeconfig — the same credential Project-Operations
+// uses for this cluster. App secrets come from job-scoped credentials suffixed
+// -staging / -prod (env.CRED).
 
 def call() {
-    def helpers = load 'jenkins/helpers.groovy'
-
     withCredentials([
         file(credentialsId: 'epic-fleet-kubeconfig', variable: 'KUBECONFIG_FILE'),
         string(credentialsId: 'REGISTRY_TOKEN', variable: 'REGISTRY_TOKEN'),
@@ -28,15 +24,11 @@ def call() {
                 set -euo pipefail
                 export KUBECONFIG="${KUBECONFIG_FILE}"
 
-                echo "Deploying eg-esign to ${ENVN}"
-                echo "  Namespace: ${NAMESPACE}"
-                echo "  Image:     ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
+                echo "Deploying eg-esign to ${ENVN} (ns ${NAMESPACE}, image ${IMAGE_TAG})"
                 kubectl cluster-info
-
                 kubectl create namespace "${NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
 
-                # The deployment declares imagePullSecrets: acr-pull-secret, so it
-                # must exist before the manifests are applied.
+                # The deployment declares imagePullSecrets: acr-pull-secret.
                 kubectl create secret docker-registry acr-pull-secret \
                     --namespace="${NAMESPACE}" \
                     --docker-server="${REGISTRY}" \
@@ -63,11 +55,8 @@ def call() {
                     --from-file=cert.p12="${CERT_FILE}" \
                     --dry-run=client -o yaml | kubectl apply -f -
 
-                # Pin the immutable per-build tag on every container that uses
-                # this image. Doing it through kustomize rather than a follow-up
-                # `kubectl set image` means one source of truth: `set image`
-                # patches only the container named on the command line, so any
-                # other container keeps whatever moving tag the overlay declared.
+                # kustomize, not `kubectl set image` — set image patches only
+                # the named container, leaving any other on a moving tag.
                 cd "k8s/eg-esign/overlays/${ENVN}"
                 kustomize edit set image \
                     "${REGISTRY}/${IMAGE_NAME}=${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
@@ -75,24 +64,19 @@ def call() {
 
                 kubectl apply -k "k8s/eg-esign/overlays/${ENVN}"
 
-                # Soft-fail: on a first deploy these wait on PVC provisioning and
-                # image pulls that can exceed the timeout. The app rollout below
-                # is the real gate.
+                # Soft-fail: first deploy waits on PVC provisioning and image
+                # pulls. The app rollout below is the real gate.
                 kubectl -n "${NAMESPACE}" rollout status statefulset/eg-esign-postgres --timeout=5m || true
                 kubectl -n "${NAMESPACE}" rollout status statefulset/minio --timeout=3m || true
 
                 kubectl -n "${NAMESPACE}" rollout status deployment/eg-esign --timeout=10m
             '''
 
-            // Health gate. /api/health returns
-            //   {"status":<overall>,"timestamp":...,"checks":{...}}
-            // with "status" as the FIRST key. The pattern is anchored at
-            // position 0 so a nested checks.*.status can never satisfy it — a
-            // bare `grep ok` would pass a top-level "error" body whose
-            // untouched checks.certificate still reads "ok". "warning" is
-            // accepted deliberately (e.g. cert unavailable, still HTTP 200) to
-            // match the pod's own readinessProbe, which passes on any 2xx.
-            // Only a top-level "error" (HTTP 500) fails the deploy.
+            // /api/health returns {"status":<overall>,...,"checks":{...}}. The
+            // pattern is anchored at position 0 so a nested checks.*.status
+            // can't satisfy it — a bare `grep ok` would pass a top-level
+            // "error" body. "warning" is accepted to match the readinessProbe
+            // (any 2xx); only top-level "error" fails the deploy.
             sh '''#!/bin/bash
                 set -uo pipefail
                 export KUBECONFIG="${KUBECONFIG_FILE}"
