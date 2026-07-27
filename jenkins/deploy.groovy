@@ -13,7 +13,10 @@ def call() {
         string(credentialsId: "eg-esign-encryption-key-2${env.CRED}", variable: 'ENCRYPTION_KEY_2'),
         string(credentialsId: "eg-esign-postgres-password${env.CRED}", variable: 'POSTGRES_PASSWORD'),
         string(credentialsId: "eg-esign-minio-password${env.CRED}", variable: 'MINIO_PASSWORD'),
-        string(credentialsId: "eg-esign-smtp-password${env.CRED}", variable: 'SMTP_PASSWORD'),
+        // Shared across environments on purpose — one SendGrid account sends
+        // for both. Split into eg-esign-smtp-password{-staging,-prod} if prod
+        // ever needs its own key.
+        string(credentialsId: 'sendgrid-api-key', variable: 'SMTP_PASSWORD'),
         string(credentialsId: "eg-esign-cert-passphrase${env.CRED}", variable: 'CERT_PASSPHRASE'),
         file(credentialsId: "eg-esign-certificate-p12${env.CRED}", variable: 'CERT_FILE'),
         string(credentialsId: "eg-esign-oidc-client-id${env.CRED}", variable: 'OIDC_CLIENT_ID'),
