@@ -42,7 +42,7 @@ EOF
                         --scanners vuln \
                         --severity HIGH,CRITICAL \
                         --ignore-unfixed \
-                        --ignorefile .trivyignore \
+                        --ignorefile .trivyignore-image \
                         --timeout 30m \
                         --exit-code 1 \
                         --format table \
