@@ -12,7 +12,7 @@ def call() {
         // npm 10 fails `npm ci` with "Missing: typescript@5.9.3 from lock file".
         sh '''#!/bin/sh
             set -e
-            apk add --no-cache openssl libc6-compat jq git
+            apk add --no-cache openssl libc6-compat jq git curl
             npm install -g npm@11.11.0
             npm ci --no-audit --no-fund
         '''

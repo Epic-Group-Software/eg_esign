@@ -7,7 +7,14 @@
 
 import groovy.json.JsonOutput
 
+// GITHUB_REPO is set explicitly in Jenkinsfile.eg. Do NOT infer this from
+// JOB_NAME the way Project-Operations does: the Jenkins job is "eg-esign" but
+// the GitHub repo is "eg_esign", so the inferred name 404s and every status
+// silently disappears.
 def getRepoName() {
+    if (env.GITHUB_REPO) {
+        return env.GITHUB_REPO
+    }
     def parts = env.JOB_NAME.split('/')
     return parts.length > 1 ? parts[parts.length - 2] : parts[0]
 }

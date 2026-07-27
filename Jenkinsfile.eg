@@ -23,6 +23,9 @@ pipeline {
         REGISTRY_USERNAME = 'epicregistry'
         IMAGE_NAME        = 'epic-group-software/eg-esign'
         GIT_CREDENTIAL_ID = 'f1b484af-24eb-4f28-a57a-66db51117a73'
+        // Jenkins job is 'eg-esign'; the GitHub repo is 'eg_esign'. Set it
+        // explicitly so status/comment API calls hit the right repo.
+        GITHUB_REPO       = 'eg_esign'
     }
 
     stages {
