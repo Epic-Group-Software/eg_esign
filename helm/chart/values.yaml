@@ -78,8 +78,16 @@ minio:
 
 # In-cluster mail sink. Staging only — production sends via SendGrid, and a
 # shared credential would let staging email real signers.
+#
+# When enabled the UI is published at https://<fqdn>/mailpit/ behind basic auth.
+# Captured mail contains real signing links, so the password is injected from a
+# Jenkins credential at deploy time and never lives in this file.
 mailpit:
   enabled: false
+  webroot: /mailpit/
+  auth:
+    username: admin
+    password: ""
   resources:
     requests:
       cpu: 10m

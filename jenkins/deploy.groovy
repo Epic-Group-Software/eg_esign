@@ -22,6 +22,9 @@ def call() {
         file(credentialsId: "eg-esign-certificate-p12${env.CRED}", variable: 'CERT_FILE'),
         string(credentialsId: "eg-esign-oidc-client-id${env.CRED}", variable: 'OIDC_CLIENT_ID'),
         string(credentialsId: "eg-esign-oidc-client-secret${env.CRED}", variable: 'OIDC_CLIENT_SECRET'),
+        // Only staging runs mailpit, but the binding must exist for both so the
+        // withCredentials block stays valid; prod simply never renders it.
+        string(credentialsId: 'eg-esign-mailpit-ui-password', variable: 'MAILPIT_UI_PASSWORD'),
     ]) {
         container('kubectl') {
             sh """#!/bin/bash
@@ -65,6 +68,7 @@ def call() {
                     --set-string postgres.auth.password="\${POSTGRES_PASSWORD}" \
                     --set-string minio.auth.rootPassword="\${MINIO_PASSWORD}" \
                     --set-string certificate.p12Base64="\${CERT_B64}" \
+                    --set-string mailpit.auth.password="\${MAILPIT_UI_PASSWORD}" \
                     --history-max 5 \
                     --wait \
                     --timeout 15m
