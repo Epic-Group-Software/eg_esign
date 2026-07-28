@@ -110,6 +110,12 @@ oidc:
   # multi-tenant and a pinned tenant would reject partner tenants.
   wellKnown: https://login.microsoftonline.com/organizations/v2.0/.well-known/openid-configuration
   providerLabel: Sign in with Microsoft
+  # Entra does not emit the email_verified claim, and Documenso rejects any
+  # login without it (UNVERIFIED_EMAIL, see validateOauth in
+  # packages/auth/server/lib/utils/handle-oauth-callback-url.ts). Required for
+  # Microsoft sign-in to work at all. Access is still gated by the enterprise
+  # app's assignment requirement and config.allowedSignupDomains.
+  skipVerify: "true"
 
 signing:
   transport: local
@@ -163,7 +169,14 @@ config:
   uploadTransport: s3
   uploadRegion: us-east-1
   documentSizeUploadLimit: "50"
-  disableSignup: "true"
+  # Master switch stays OFF. It blocks every signup path including OIDC
+  # (isSignupEnabledForProvider short-circuits on it), so with it on nobody can
+  # ever create the first account — not even an approved Entra user. Signup is
+  # locked down by the two settings below instead: SSO only, and only from an
+  # allowed domain.
+  disableSignup: "false"
+  # No self-service password accounts — SSO is the only way in.
+  disableEmailPasswordSignup: "true"
   # Entra authenticates any consented tenant; this decides who gets an account.
   allowedSignupDomains: epicgroup.ca
   billingEnabled: "false"
