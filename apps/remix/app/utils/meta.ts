@@ -3,18 +3,13 @@ import { i18n, type MessageDescriptor } from '@lingui/core';
 
 export const appMetaTags = (title?: MessageDescriptor | string) => {
   const description =
-    'Davinci Sign - Professional electronic signature solution by Davinci AI Solutions. Fast, secure, and easy document signing for businesses. Streamline your workflow with our powerful e-signature platform.';
+    'Epic Sign - Professional electronic signature solution by Epic Group. Fast, secure, and easy document signing for businesses. Streamline your workflow with our powerful e-signature platform.';
 
-  const resolvedTitle = 
-    typeof title === 'string' 
-      ? title 
-      : title 
-        ? i18n._(title) 
-        : '';
+  const resolvedTitle = typeof title === 'string' ? title : title ? i18n._(title) : '';
 
   return [
     {
-      title: resolvedTitle ? `${resolvedTitle} - Davinci Sign` : 'Davinci Sign',
+      title: resolvedTitle ? `${resolvedTitle} - Epic Sign` : 'Epic Sign',
     },
     {
       name: 'description',
@@ -23,11 +18,11 @@ export const appMetaTags = (title?: MessageDescriptor | string) => {
     {
       name: 'keywords',
       content:
-        'Davinci Sign, electronic signature, document signing, e-signature, digital signature, Davinci AI Solutions, secure signing, business documents',
+        'Epic Sign, electronic signature, document signing, e-signature, digital signature, Epic Group, secure signing, business documents',
     },
     {
       name: 'author',
-      content: 'Davinci AI Solutions',
+      content: 'Epic Group',
     },
     {
       name: 'robots',
@@ -35,7 +30,7 @@ export const appMetaTags = (title?: MessageDescriptor | string) => {
     },
     {
       property: 'og:title',
-      content: 'Davinci Sign - Professional Electronic Signature Solution',
+      content: 'Epic Sign - Professional Electronic Signature Solution',
     },
     {
       property: 'og:description',
@@ -52,10 +47,6 @@ export const appMetaTags = (title?: MessageDescriptor | string) => {
     {
       name: 'twitter:card',
       content: 'summary_large_image',
-    },
-    {
-      name: 'twitter:site',
-      content: '@davincisolutions',
     },
     {
       name: 'twitter:description',

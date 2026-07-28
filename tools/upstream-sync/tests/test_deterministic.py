@@ -4,14 +4,14 @@ from branding_resolver.deterministic import apply_substitutions
 
 
 def test_replaces_bare_brand_name():
-    assert apply_substitutions("Welcome to Documenso!") == "Welcome to Davinci Sign!"
+    assert apply_substitutions("Welcome to Documenso!") == "Welcome to Epic Sign!"
 
 
 def test_replaces_multiple_occurrences():
     src = "# Documenso\n\nWelcome to Documenso, a great tool. Documenso rocks."
     out = apply_substitutions(src)
     assert "Documenso" not in out
-    assert out.count("Davinci Sign") == 3
+    assert out.count("Epic Sign") == 3
 
 
 def test_preserves_package_scope():
@@ -29,7 +29,7 @@ def test_replaces_brand_but_preserves_credit_url_on_same_line():
     src = "> Based on [Documenso](https://github.com/documenso/documenso)."
     out = apply_substitutions(src)
     # Bare brand name (the link text) is replaced.
-    assert "[Davinci Sign]" in out
+    assert "[Epic Sign]" in out
     # The URL is preserved.
     assert "github.com/documenso/documenso" in out
 
@@ -37,21 +37,21 @@ def test_replaces_brand_but_preserves_credit_url_on_same_line():
 def test_longest_match_wins_for_company_name():
     # "Documenso, Inc." is longer and should hit before "Documenso".
     src = "Copyright Documenso, Inc. 2024"
-    assert apply_substitutions(src) == "Copyright Davinci AI Solutions 2024"
+    assert apply_substitutions(src) == "Copyright Epic Group 2024"
 
 
 def test_email_substitution():
     src = "Contact noreply@documenso.com for help."
     out = apply_substitutions(src)
     assert "@documenso.com" not in out
-    assert "noreply@davincisolutions.ai" in out
+    assert "noreply@epicgroup.ca" in out
 
 
 def test_docker_image_substitution_outside_credit_url():
     # "documenso/documenso" is the docker image name; replace when not in a URL.
     src = "FROM documenso/documenso:latest"
     out = apply_substitutions(src)
-    assert "davinci/davinci-sign:latest" in out
+    assert "epic-group-software/eg-esign:latest" in out
 
 
 def test_docker_image_preserved_inside_github_url():
@@ -63,7 +63,7 @@ def test_docker_image_preserved_inside_github_url():
 
 def test_color_hex_substitution():
     src = "background: #7AC455;"
-    assert apply_substitutions(src) == "background: #1A98CF;"
+    assert apply_substitutions(src) == "background: #358ab5;"
 
 
 def test_idempotent():
@@ -97,12 +97,12 @@ def test_full_readme_excerpt():
     )
     out = apply_substitutions(src)
     # Heading and prose: replaced.
-    assert out.startswith("# Davinci Sign\n")
-    assert "Davinci Sign is a digital signature platform. Welcome to Davinci Sign!" in out
+    assert out.startswith("# Epic Sign\n")
+    assert "Epic Sign is a digital signature platform. Welcome to Epic Sign!" in out
     # Package scope: preserved.
     assert "@documenso/pdf-sign" in out
     # GitHub URL: preserved.
     assert "github.com/documenso/documenso" in out
     # Bare domain: replaced.
     assert "documenso.com" not in out
-    assert "davincisolutions.ai" in out
+    assert "epicgroup.ca" in out

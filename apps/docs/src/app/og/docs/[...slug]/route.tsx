@@ -55,7 +55,7 @@ export async function GET(_req: Request, { params }: RouteContext<'/og/docs/[...
           left: 0,
           right: 0,
           height: '6px',
-          backgroundColor: '#6DC947',
+          backgroundColor: '#358ab5',
         }}
       />
 
@@ -68,7 +68,7 @@ export async function GET(_req: Request, { params }: RouteContext<'/og/docs/[...
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={logoSrc} alt="Documenso" height="28" />
+        <img src={logoSrc} alt="Epic Sign" height="28" />
         <span
           style={{
             color: '#D4D4D8',
@@ -126,7 +126,7 @@ export async function GET(_req: Request, { params }: RouteContext<'/og/docs/[...
 
       {/* Bottom: URL */}
       <div style={{ display: 'flex', alignItems: 'center' }}>
-        <span style={{ color: '#A1A1AA', fontSize: '16px', fontWeight: 400 }}>docs.documenso.com{page.url}</span>
+        <span style={{ color: '#A1A1AA', fontSize: '16px', fontWeight: 400 }}>docs.epicgroup.ca{page.url}</span>
       </div>
     </div>,
     {

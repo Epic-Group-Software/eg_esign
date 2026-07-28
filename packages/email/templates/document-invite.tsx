@@ -26,9 +26,9 @@ export type DocumentInviteEmailTemplateProps = Partial<TemplateDocumentInvitePro
 
 export const DocumentInviteEmailTemplate = ({
   inviterName = 'Lucas Smith',
-  inviterEmail = 'lucas@davincisolutions.ai',
+  inviterEmail = 'lucas@epicgroup.ca',
   documentName = 'Open Source Pledge.pdf',
-  signDocumentLink = 'https://davincisolutions.ai',
+  signDocumentLink = 'https://epicgroup.ca',
   assetBaseUrl = 'http://localhost:3002',
   customBody,
   role,
@@ -62,7 +62,7 @@ export const DocumentInviteEmailTemplate = ({
         <Preview>{_(previewText)}</Preview>
 
         <Section>
-          <Container className="mx-auto mb-2 mt-8 max-w-xl rounded-lg border border-solid border-border p-4 backdrop-blur-sm">
+          <Container className="mx-auto mt-8 mb-2 max-w-xl rounded-lg border border-border border-solid p-4 backdrop-blur-sm">
             <Section>
               {branding.brandingEnabled && branding.brandingLogo ? (
                 <Img src={branding.brandingLogo} alt="Branding Logo" className="mb-4 h-6" />
@@ -88,7 +88,7 @@ export const DocumentInviteEmailTemplate = ({
           <Container className="mx-auto mt-12 max-w-xl">
             <Section>
               {organisationType === OrganisationType.PERSONAL && (
-                <Text className="my-4 text-base font-semibold text-foreground">
+                <Text className="my-4 font-semibold text-base text-foreground">
                   <Trans>
                     {inviterName}{' '}
                     <Link className="font-normal text-muted-foreground" href={`mailto:${inviterEmail}`}>

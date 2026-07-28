@@ -13,7 +13,7 @@ import type { Transporter } from 'nodemailer';
 import { match, P } from 'ts-pattern';
 
 import { IS_BILLING_ENABLED } from '../../constants/app';
-import { DAVINCI_INTERNAL_EMAIL } from '../../constants/email';
+import { EPIC_INTERNAL_EMAIL } from '../../constants/email';
 import { AppError, AppErrorCode } from '../../errors/app-error';
 import { logger } from '../../utils/logger';
 import {
@@ -106,7 +106,7 @@ export const getEmailContext = async (options: GetEmailContextOptions): Promise<
 
   // A configured transport that fails to resolve is an operational problem, not
   // "no transport". Surface it (alertable) before silently falling back to the
-  // system mailer + Davinci Sign sender, so the degraded organisation is findable.
+  // system mailer + Epic Sign sender, so the degraded organisation is findable.
   if (emailContext.claims.emailTransportId && !transportResolution) {
     logger.error({
       msg: 'Configured email transport could not be resolved; falling back to the system mailer',
@@ -122,8 +122,8 @@ export const getEmailContext = async (options: GetEmailContextOptions): Promise<
         transport: transportResolution.transporter,
       }
     : {
-        name: DAVINCI_INTERNAL_EMAIL.name,
-        address: DAVINCI_INTERNAL_EMAIL.address,
+        name: EPIC_INTERNAL_EMAIL.name,
+        address: EPIC_INTERNAL_EMAIL.address,
         transport: mailer,
       };
 
@@ -146,7 +146,7 @@ export const getEmailContext = async (options: GetEmailContextOptions): Promise<
   const senderEmailId = match(meta?.emailId)
     .with(P.string, (emailId) => emailId) // Explicit string means to use the provided email ID.
     .with(undefined, () => emailContext.settings.emailId) // Undefined means to use the inherited email ID.
-    .with(null, () => null) // Explicit null means to use the Davinci Sign email.
+    .with(null, () => null) // Explicit null means to use the Epic Sign email.
     .exhaustive();
 
   const foundSenderEmail = emailContext.allowedEmails.find((email) => email.id === senderEmailId);
@@ -216,14 +216,9 @@ const handleOrganisationEmailContext = async (
 
   const settings = organisation.organisationGlobalSettings;
 
-  const allowBrandedEmailColors =
-    !IS_BILLING_ENABLED() || claims.flags.embedSigningWhiteLabel === true;
+  const allowBrandedEmailColors = !IS_BILLING_ENABLED() || claims.flags.embedSigningWhiteLabel === true;
 
-  const branding = organisationGlobalSettingsToBranding(
-    settings,
-    organisation.id,
-    claims.flags.hidePoweredBy ?? false,
-  );
+  const branding = organisationGlobalSettingsToBranding(settings, organisation.id, claims.flags.hidePoweredBy ?? false);
 
   if (!allowBrandedEmailColors) {
     branding.brandingColors = undefined;

@@ -18,14 +18,14 @@ export type TeamEmailRemovedTemplateProps = {
 
 export const TeamEmailRemovedTemplate = ({
   assetBaseUrl = 'http://localhost:3002',
-  baseUrl = 'https://davincisolutions.ai',
-  teamEmail = 'example@davincisolutions.ai',
+  baseUrl = 'https://epicgroup.ca',
+  teamEmail = 'example@epicgroup.ca',
   teamName = 'Team Name',
   teamUrl = 'demo',
 }: TeamEmailRemovedTemplateProps) => {
   const { _ } = useLingui();
 
-  const previewText = msg`Team email removed for ${teamName} on Davinci Sign`;
+  const previewText = msg`Team email removed for ${teamName} on Epic Sign`;
 
   return (
     <Html>

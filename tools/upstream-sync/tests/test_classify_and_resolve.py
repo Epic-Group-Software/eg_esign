@@ -70,7 +70,7 @@ class TestValidator:
         assert any("conflict" in e.lower() or "marker" in e.lower() for e in errors)
 
     def test_clean_content_passes(self):
-        content = 'const name = "Davinci Sign";\nconst email = "support@davincisolutions.ai";\n'
+        content = 'const name = "Epic Sign";\nconst email = "support@epicgroup.ca";\n'
         errors = validate_resolved_file("test.ts", content, self.config)
         assert len(errors) == 0
 

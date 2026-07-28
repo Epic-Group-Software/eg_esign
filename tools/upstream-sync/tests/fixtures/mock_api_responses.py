@@ -4,7 +4,7 @@ import json
 from unittest.mock import MagicMock
 
 
-def resolve_conflict_response(file_path: str, content: str, confidence: str = "high", explanation: str = "Merged upstream changes with Davinci Sign branding."):
+def resolve_conflict_response(file_path: str, content: str, confidence: str = "high", explanation: str = "Merged upstream changes with Epic Sign branding."):
     """Create a mock response with a resolve_conflict tool call."""
     from tests.conftest import make_openai_tool_call, make_openai_response
 

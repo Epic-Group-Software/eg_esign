@@ -16,11 +16,11 @@
 
     --card: 0 0% 100%;
     --card-border: 214.3 31.8% 91.4%;
-    --card-border-tint: 112 205 159;
+    --card-border-tint: 53 138 181;
     --card-foreground: 222.2 47.4% 11.2%;
 
-    --field-card: 197 74% 90%;
-    --field-card-border: 197 79% 46%;
+    --field-card: 201 47% 90%;
+    --field-card-border: 200 55% 46%;
     --field-card-foreground: 222.2 47.4% 11.2%;
 
     --widget: 0 0% 97%;
@@ -29,8 +29,8 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
 
-    --primary: 197 79% 46%;
-    --primary-foreground: 197 79% 10%;
+    --primary: 200 55% 46%;
+    --primary-foreground: 200 55% 10%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -41,7 +41,7 @@
     --destructive: 0 100% 50%;
     --destructive-foreground: 210 40% 98%;
 
-    --ring: 197 79% 46%;
+    --ring: 200 55% 46%;
 
     --radius: 0.5rem;
 
@@ -82,18 +82,18 @@
     --new-white-800: 0, 0%, 90%;
     --new-white-900: 0, 0%, 100%;
 
-    /* Primary - Blue (Davinci) */
-    --new-primary-50: 197, 73%, 97%;
-    --new-primary-100: 197, 73%, 94%;
-    --new-primary-200: 197, 70%, 87%;
-    --new-primary-300: 197, 71%, 81%;
-    --new-primary-400: 197, 71%, 74%;
-    --new-primary-500: 197, 79%, 46%;
-    --new-primary-600: 197, 71%, 37%;
-    --new-primary-700: 197, 71%, 28%;
-    --new-primary-800: 197, 71%, 19%;
-    --new-primary-900: 197, 72%, 10%;
-    --new-primary-950: 197, 72%, 5%;
+    /* Primary - epic-blue #358ab5 */
+    --new-primary-50: 198, 45%, 96%;
+    --new-primary-100: 201, 47%, 90%;
+    --new-primary-200: 199, 46%, 83%;
+    --new-primary-300: 200, 46%, 74%;
+    --new-primary-400: 200, 46%, 65%;
+    --new-primary-500: 200, 55%, 46%;
+    --new-primary-600: 200, 55%, 37%;
+    --new-primary-700: 200, 54%, 28%;
+    --new-primary-800: 200, 55%, 18%;
+    --new-primary-900: 201, 55%, 13%;
+    --new-primary-950: 200, 55%, 10%;
 
     /* Secondary - Info */
     --new-info-50: 210, 54%, 95%;
@@ -141,6 +141,10 @@
     --envelope-editor-background: 210 40% 98.04%;
   }
 
+  /* Dark mode lifts the brand blue from 46% to 55% lightness: at 46% the
+     foreground tokens below render text at 3.97:1 on the dark background,
+     under the 4.5:1 AA threshold. 55% gives 5.26:1. Hue and saturation are
+     unchanged, so it still reads as the same brand colour. */
   .dark:not(.dark-mode-disabled) {
     --background: 0 0% 14.9%;
     --foreground: 0 0% 97%;
@@ -153,7 +157,7 @@
 
     --card: 0 0% 14.9%;
     --card-border: 0 0% 27.9%;
-    --card-border-tint: 112 205 159;
+    --card-border-tint: 53 138 181;
     --card-foreground: 0 0% 95%;
 
     --widget: 0 0% 14.9%;
@@ -164,19 +168,19 @@
 
     --field-border: 214.3 31.8% 91.4%;
 
-    --primary: 197 79% 46%;
-    --primary-foreground: 197 79% 10%;
+    --primary: 200 55% 55%;
+    --primary-foreground: 200 55% 10%;
 
     --secondary: 0 0% 23.4%;
-    --secondary-foreground: 197 79% 46%;
+    --secondary-foreground: 200 55% 55%;
 
     --accent: 0 0% 27.9%;
-    --accent-foreground: 197 79% 46%;
+    --accent-foreground: 200 55% 55%;
 
     --destructive: 0 87% 62%;
     --destructive-foreground: 0 0% 98%;
 
-    --ring: 197 79% 46%;
+    --ring: 200 55% 55%;
 
     --radius: 0.5rem;
 

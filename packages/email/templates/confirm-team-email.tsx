@@ -3,19 +3,7 @@ import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
 
-import {
-  Body,
-  Button,
-  Container,
-  Head,
-  Hr,
-  Html,
-  Img,
-  Link,
-  Preview,
-  Section,
-  Text,
-} from '../components';
+import { Body, Button, Container, Head, Hr, Html, Img, Link, Preview, Section, Text } from '../components';
 import { useBranding } from '../providers/branding';
 import { TemplateBrandingLogo } from '../template-components/template-branding-logo';
 import { TemplateFooter } from '../template-components/template-footer';
@@ -31,7 +19,7 @@ export type ConfirmTeamEmailProps = {
 
 export const ConfirmTeamEmailTemplate = ({
   assetBaseUrl = 'http://localhost:3002',
-  baseUrl = 'https://davincisolutions.ai',
+  baseUrl = 'https://epicgroup.ca',
   teamName = 'Team Name',
   teamUrl = 'demo',
   token = '',
@@ -39,7 +27,7 @@ export const ConfirmTeamEmailTemplate = ({
   const { _ } = useLingui();
   const branding = useBranding();
 
-  const previewText = msg`Accept team email request for ${teamName} on Davinci Sign`;
+  const previewText = msg`Accept team email request for ${teamName} on Epic Sign`;
 
   return (
     <Html>
@@ -48,7 +36,7 @@ export const ConfirmTeamEmailTemplate = ({
         <Preview>{_(previewText)}</Preview>
 
         <Section className="bg-background">
-          <Container className="mx-auto mb-2 mt-8 max-w-xl rounded-lg border border-solid border-border px-2 pt-2 backdrop-blur-sm">
+          <Container className="mx-auto mt-8 mb-2 max-w-xl rounded-lg border border-border border-solid px-2 pt-2 backdrop-blur-sm">
             {branding.brandingEnabled && branding.brandingLogo ? (
               <Img src={branding.brandingLogo} alt="Branding Logo" className="mb-4 h-6 p-2" />
             ) : (
@@ -56,38 +44,33 @@ export const ConfirmTeamEmailTemplate = ({
             )}
 
             <Section>
-              <TemplateImage
-                className="mx-auto"
-                assetBaseUrl={assetBaseUrl}
-                staticAsset="mail-open.png"
-              />
+              <TemplateImage className="mx-auto" assetBaseUrl={assetBaseUrl} staticAsset="mail-open.png" />
             </Section>
 
             <Section className="p-2 text-muted-foreground">
-              <Text className="text-center text-lg font-medium text-foreground">
+              <Text className="text-center font-medium text-foreground text-lg">
                 <Trans>Verify your team email address</Trans>
               </Text>
 
               <Text className="text-center text-base">
                 <Trans>
-                  <span className="font-bold">{teamName}</span> has requested to use your email
-                  address for their team on Davinci Sign.
+                  <span className="font-bold">{teamName}</span> has requested to use your email address for their team
+                  on Epic Sign.
                 </Trans>
               </Text>
 
-              <div className="mx-auto mt-6 w-fit rounded-lg bg-muted px-4 py-2 text-base font-medium text-muted-foreground">
+              <div className="mx-auto mt-6 w-fit rounded-lg bg-muted px-4 py-2 font-medium text-base text-muted-foreground">
                 {formatTeamUrl(teamUrl, baseUrl)}
               </div>
 
               <Section className="mt-6">
                 <Text className="my-0 text-sm">
                   <Trans>
-                    By accepting this request, you will be granting <strong>{teamName}</strong>{' '}
-                    access to:
+                    By accepting this request, you will be granting <strong>{teamName}</strong> access to:
                   </Trans>
                 </Text>
 
-                <ul className="mb-0 mt-2">
+                <ul className="mt-2 mb-0">
                   <li className="text-sm">
                     <Trans>View all documents sent to and from this email address</Trans>
                   </li>
@@ -101,15 +84,15 @@ export const ConfirmTeamEmailTemplate = ({
 
                 <Text className="mt-2 text-sm">
                   <Trans>
-                    You can revoke access at any time in your team settings on Davinci Sign{' '}
+                    You can revoke access at any time in your team settings on Epic Sign{' '}
                     <Link href={`${baseUrl}/settings/teams`}>here</Link>.
                   </Trans>
                 </Text>
               </Section>
 
-              <Section className="mb-6 mt-8 text-center">
+              <Section className="mt-8 mb-6 text-center">
                 <Button
-                  className="inline-flex items-center justify-center rounded-lg bg-documenso-500 px-6 py-3 text-center text-sm font-medium text-black no-underline"
+                  className="inline-flex items-center justify-center rounded-lg bg-documenso-500 px-6 py-3 text-center font-medium text-black text-sm no-underline"
                   href={`${baseUrl}/team/verify/email/${token}`}
                 >
                   <Trans>Accept</Trans>
@@ -117,7 +100,7 @@ export const ConfirmTeamEmailTemplate = ({
               </Section>
             </Section>
 
-            <Text className="text-center text-xs text-muted-foreground">
+            <Text className="text-center text-muted-foreground text-xs">
               <Trans>Link expires in 1 hour.</Trans>
             </Text>
           </Container>

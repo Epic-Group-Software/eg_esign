@@ -511,7 +511,7 @@ export const createEnvelope = async ({
 
         const placeholderRecipients = Array.from(uniqueRecipientRefs.entries(), ([recipientIndex, name]) => ({
           envelopeId: envelope.id,
-          email: `recipient.${recipientIndex}@davincisolutions.ai`,
+          email: `recipient.${recipientIndex}@epicgroup.ca`,
           name,
           role: RecipientRole.SIGNER,
           signingOrder: recipientIndex,

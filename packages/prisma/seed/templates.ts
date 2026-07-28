@@ -131,7 +131,7 @@ export const seedTemplate = async (options: SeedTemplateOptions) => {
       teamId,
       recipients: {
         create: {
-          email: 'recipient.1@davincisolutions.ai',
+          email: 'recipient.1@epicgroup.ca',
           name: 'Recipient 1',
           token: Math.random().toString().slice(2, 7),
           sendStatus: SendStatus.NOT_SENT,

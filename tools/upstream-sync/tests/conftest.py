@@ -7,7 +7,7 @@ from branding_resolver.confidence import ConfidenceLevel
 
 @pytest.fixture
 def mock_config():
-    """Default BrandingConfig with all Davinci Sign branding."""
+    """Default BrandingConfig with all Epic Sign branding."""
     return BrandingConfig()
 
 
@@ -18,15 +18,15 @@ def sample_conflict_ts():
         path="packages/lib/constants/app.ts",
         hunks=[
             ConflictHunk(
-                ours='export const APP_NAME = "Davinci Sign";\nexport const APP_VERSION = "2.5.0";\n',
+                ours='export const APP_NAME = "Epic Sign";\nexport const APP_VERSION = "2.5.0";\n',
                 theirs='export const APP_NAME = "Documenso";\nexport const APP_VERSION = "2.6.0";\n',
                 context_before='// Application constants\n',
-                context_after='\nexport const APP_URL = "https://app.davincisolutions.ai";\n',
+                context_after='\nexport const APP_URL = "https://app.epicgroup.ca";\n',
                 start_line=5,
                 end_line=12,
             )
         ],
-        full_ours='// Application constants\nexport const APP_NAME = "Davinci Sign";\nexport const APP_VERSION = "2.5.0";\nexport const APP_URL = "https://app.davincisolutions.ai";\n',
+        full_ours='// Application constants\nexport const APP_NAME = "Epic Sign";\nexport const APP_VERSION = "2.5.0";\nexport const APP_URL = "https://app.epicgroup.ca";\n',
         full_theirs='// Application constants\nexport const APP_NAME = "Documenso";\nexport const APP_VERSION = "2.6.0";\nexport const APP_URL = "https://app.documenso.com";\n',
     )
 

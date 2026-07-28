@@ -1,13 +1,3 @@
-import { useEffect, useState } from 'react';
-
-import { zodResolver } from '@hookform/resolvers/zod';
-import { msg } from '@lingui/core/macro';
-import { useLingui } from '@lingui/react';
-import { Trans } from '@lingui/react/macro';
-import { useForm } from 'react-hook-form';
-import { renderSVG } from 'uqr';
-import { z } from 'zod';
-
 import { authClient } from '@documenso/auth/client';
 import { downloadFile } from '@documenso/lib/client-only/download-file';
 import { useSession } from '@documenso/lib/client-only/providers/session';
@@ -22,16 +12,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@documenso/ui/primitives/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@documenso/ui/primitives/form/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@documenso/ui/primitives/form/form';
 import { PinInput, PinInputGroup, PinInputSlot } from '@documenso/ui/primitives/pin-input';
 import { useToast } from '@documenso/ui/primitives/use-toast';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { msg } from '@lingui/core/macro';
+import { useLingui } from '@lingui/react';
+import { Trans } from '@lingui/react/macro';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { renderSVG } from 'uqr';
+import { z } from 'zod';
 
 import { RecoveryCodeList } from './recovery-code-list';
 
@@ -100,9 +91,7 @@ export const EnableAuthenticatorAppDialog = ({ onSuccess }: EnableAuthenticatorA
 
       toast({
         title: _(msg`Two-factor authentication enabled`),
-        description: _(
-          msg`You will now be required to enter a code from your authenticator app when signing in.`,
-        ),
+        description: _(msg`You will now be required to enter a code from your authenticator app when signing in.`),
       });
     } catch (_err) {
       toast({
@@ -122,7 +111,7 @@ export const EnableAuthenticatorAppDialog = ({ onSuccess }: EnableAuthenticatorA
       });
 
       downloadFile({
-        filename: 'davinci-sign-2FA-recovery-codes.txt',
+        filename: 'epic-sign-2FA-recovery-codes.txt',
         data: blob,
       });
     }
@@ -162,119 +151,112 @@ export const EnableAuthenticatorAppDialog = ({ onSuccess }: EnableAuthenticatorA
       </DialogTrigger>
 
       <DialogContent position="center">
-        {setup2FAData && (
-          <>
-            {recoveryCodes ? (
-              <div>
+        {setup2FAData &&
+          (recoveryCodes ? (
+            <div>
+              <DialogHeader>
+                <DialogTitle>
+                  <Trans>Backup codes</Trans>
+                </DialogTitle>
+                <DialogDescription>
+                  <Trans>Your recovery codes are listed below. Please store them in a safe place.</Trans>
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="mt-4">
+                <RecoveryCodeList recoveryCodes={recoveryCodes} />
+              </div>
+
+              <DialogFooter className="mt-4">
+                <DialogClose asChild>
+                  <Button variant="secondary">
+                    <Trans>Close</Trans>
+                  </Button>
+                </DialogClose>
+
+                <Button onClick={downloadRecoveryCodes}>
+                  <Trans>Download</Trans>
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <Form {...enable2FAForm}>
+              <form onSubmit={enable2FAForm.handleSubmit(onEnable2FAFormSubmit)}>
                 <DialogHeader>
                   <DialogTitle>
-                    <Trans>Backup codes</Trans>
+                    <Trans>Enable Authenticator App</Trans>
                   </DialogTitle>
                   <DialogDescription>
                     <Trans>
-                      Your recovery codes are listed below. Please store them in a safe place.
+                      To enable two-factor authentication, scan the following QR code using your authenticator app.
                     </Trans>
                   </DialogDescription>
                 </DialogHeader>
 
-                <div className="mt-4">
-                  <RecoveryCodeList recoveryCodes={recoveryCodes} />
-                </div>
+                <div className="flex flex-col items-center space-y-4 py-4">
+                  <div
+                    className="rounded-lg border-4 border-white bg-white"
+                    dangerouslySetInnerHTML={{
+                      __html: renderSVG(setup2FAData.uri),
+                    }}
+                  />
 
-                <DialogFooter className="mt-4">
-                  <DialogClose asChild>
-                    <Button variant="secondary">
-                      <Trans>Close</Trans>
-                    </Button>
-                  </DialogClose>
+                  <p className="text-muted-foreground text-sm">
+                    <Trans>
+                      If your authenticator app does not support QR codes, you can use the following code instead:
+                    </Trans>
+                  </p>
 
-                  <Button onClick={downloadRecoveryCodes}>
-                    <Trans>Download</Trans>
-                  </Button>
-                </DialogFooter>
-              </div>
-            ) : (
-              <Form {...enable2FAForm}>
-                <form onSubmit={enable2FAForm.handleSubmit(onEnable2FAFormSubmit)}>
-                  <DialogHeader>
-                    <DialogTitle>
-                      <Trans>Enable Authenticator App</Trans>
-                    </DialogTitle>
-                    <DialogDescription>
-                      <Trans>
-                        To enable two-factor authentication, scan the following QR code using your
-                        authenticator app.
-                      </Trans>
-                    </DialogDescription>
-                  </DialogHeader>
+                  <p className="rounded-lg bg-muted/60 p-2 text-center font-mono text-muted-foreground tracking-widest">
+                    {setup2FAData?.secret}
+                  </p>
 
-                  <div className="flex flex-col items-center space-y-4 py-4">
-                    <div
-                      className="rounded-lg border-4 border-white bg-white"
-                      dangerouslySetInnerHTML={{
-                        __html: renderSVG(setup2FAData.uri),
-                      }}
-                    />
+                  <p className="text-muted-foreground text-sm">
+                    <Trans>
+                      Once you have scanned the QR code or entered the code manually, enter the code provided by your
+                      authenticator app below.
+                    </Trans>
+                  </p>
 
-                    <p className="text-sm text-muted-foreground">
-                      <Trans>
-                        If your authenticator app does not support QR codes, you can use the
-                        following code instead:
-                      </Trans>
-                    </p>
+                  <FormField
+                    name="token"
+                    control={enable2FAForm.control}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-muted-foreground">
+                          <Trans>Token</Trans>
+                        </FormLabel>
+                        <FormControl>
+                          <PinInput {...field} value={field.value ?? ''} maxLength={6}>
+                            {Array(6)
+                              .fill(null)
+                              .map((_, i) => (
+                                <PinInputGroup key={i}>
+                                  <PinInputSlot index={i} />
+                                </PinInputGroup>
+                              ))}
+                          </PinInput>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                    <p className="rounded-lg bg-muted/60 p-2 text-center font-mono tracking-widest text-muted-foreground">
-                      {setup2FAData?.secret}
-                    </p>
-
-                    <p className="text-sm text-muted-foreground">
-                      <Trans>
-                        Once you have scanned the QR code or entered the code manually, enter the
-                        code provided by your authenticator app below.
-                      </Trans>
-                    </p>
-
-                    <FormField
-                      name="token"
-                      control={enable2FAForm.control}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-muted-foreground">
-                            <Trans>Token</Trans>
-                          </FormLabel>
-                          <FormControl>
-                            <PinInput {...field} value={field.value ?? ''} maxLength={6}>
-                              {Array(6)
-                                .fill(null)
-                                .map((_, i) => (
-                                  <PinInputGroup key={i}>
-                                    <PinInputSlot index={i} />
-                                  </PinInputGroup>
-                                ))}
-                            </PinInput>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <DialogFooter>
-                      <DialogClose asChild>
-                        <Button variant="secondary">
-                          <Trans>Cancel</Trans>
-                        </Button>
-                      </DialogClose>
-
-                      <Button type="submit" loading={isEnabling2FA}>
-                        <Trans>Enable 2FA</Trans>
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button variant="secondary">
+                        <Trans>Cancel</Trans>
                       </Button>
-                    </DialogFooter>
-                  </div>
-                </form>
-              </Form>
-            )}
-          </>
-        )}
+                    </DialogClose>
+
+                    <Button type="submit" loading={isEnabling2FA}>
+                      <Trans>Enable 2FA</Trans>
+                    </Button>
+                  </DialogFooter>
+                </div>
+              </form>
+            </Form>
+          ))}
       </DialogContent>
     </Dialog>
   );

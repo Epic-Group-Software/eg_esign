@@ -1,165 +1,94 @@
-# Davinci Sign Branding Guide
+# Branding — Epic Sign
 
-This document details all branding-related locations in the codebase for future reference and maintenance.
+This fork of Documenso is branded as **Epic Sign** for Epic Group.
 
-## Brand Assets
+## Identity
 
-### Source Files
-- **Full Logo**: `packages/assets/logo.png` (~200px wide)
-- **Icon SVG**: `davinci-icon.svg` (Vitruvian man icon)
-- **Brand Color**: `#1A98CF` (Davinci Blue)
+| | |
+|---|---|
+| Product name | Epic Sign |
+| Primary | epic-blue `#358ab5` |
+| Secondary / accent | epic-red `#e91d2d` |
+| Neutrals | epic-charcoal `#3d3935`, epic-taupe `#958a82` |
+| Domain | `epicgroup.ca` |
+| Support | `support@epicgroup.ca` |
+| From address | `noreply@epicgroup.ca` |
 
-### Generated Assets Locations
+Palette scales are lifted from `Project-Operations/react/src/theme.ts`, the
+reference Epic Group palette, so the two apps agree.
 
-#### Primary Assets (`packages/assets/`)
-- `logo.png` - Main logo with text
-- `logo_icon.png` - 50x50 icon only
-- `favicon.ico` - Multi-size favicon (16/32/48)
-- `favicon-16x16.png`
-- `favicon-32x32.png`
-- `apple-touch-icon.png` - 180x180
-- `android-chrome-192x192.png`
-- `android-chrome-512x512.png`
-- `opengraph-image.jpg` - 1200x630 social preview
-- `static/logo.png` - Email logo
+**Blue is primary, not the logo's red.** Documenso uses red for destructive
+actions, so a red primary would make "Send document" and "Delete" look the same.
+This also matches Project-Operations, whose `CLAUDE.md` states epic-blue is
+primary and that red is being migrated out of general use.
 
-#### Remix App (`apps/remix/public/`)
-- All favicon variants
-- `opengraph-image.jpg`
-- `static/logo.png`
+## Where colour lives
 
-#### Documentation (`apps/documentation/public/`)
-- `favicon-16x16.png`
-- `favicon-32x32.png`
-- `apple-touch-icon.png`
+| File | Holds |
+|---|---|
+| `packages/tailwind-config/index.cjs` | the `documenso` ramp (= epic-blue) plus `epic-red` / `epic-charcoal` / `epic-taupe` |
+| `packages/ui/styles/theme.css` | CSS custom properties, light **and** dark blocks |
+| `packages/lib/constants/theme.ts` | `DEFAULT_BRAND_COLORS` — defaults for the per-organisation branding colour pickers and the email colour fallback |
 
-#### Email Assets (`packages/email/static/`)
-- `logo.png`
+The Tailwind palette key is still **`documenso`** on purpose: ~40 components use
+`text-documenso*` / `bg-documenso*` and four e2e specs assert
+`svg.text-documenso`. Only the values changed.
 
-## Text Reference Locations
+`theme.ts` and `theme.css` must be kept in sync by hand — nothing enforces it.
+Dark mode uses a lighter primary (55% vs 46% lightness) because the foreground
+tokens are used as text, and 46% falls under the 4.5:1 AA threshold on the dark
+background.
 
-### Core Constants
-| File | What to Change |
-|------|----------------|
-| `packages/lib/constants/email.ts` | FROM_NAME, FROM_ADDRESS, SERVICE_USER_EMAIL |
-| `packages/lib/constants/auth.ts` | IDENTITY_PROVIDER_NAME |
-| `packages/lib/constants/app.ts` | SUPPORT_EMAIL |
+## Assets
 
-### Meta Tags & SEO
-| File | What to Change |
-|------|----------------|
-| `apps/remix/app/utils/meta.ts` | Page titles, descriptions, OG tags, keywords, author, Twitter handle |
+All in `packages/assets/`, copied to `apps/remix/public/` and the `static/`
+directories.
 
-### Documentation
-| File | What to Change |
-|------|----------------|
-| `apps/documentation/theme.config.tsx` | Logo text, title pattern, footer, color hue |
+| File | Use |
+|---|---|
+| `epic-logo.svg` | full stacked logo, light |
+| `epic-logo-dark.svg` | full stacked logo, dark (white wordmark) |
+| `epic-mark.svg` | the red circle mark alone |
+| `logo.png` | raster of the full logo — emails and the PDF certificate renderer, neither of which can use SVG |
+| `favicon.ico`, `favicon-16x16.png`, `favicon-32x32.png`, `apple-touch-icon.png`, `android-chrome-192x192.png`, `android-chrome-512x512.png` | generated from `epic-mark.svg` |
+| `opengraph-image.jpg` | 1200×630, full logo on white |
 
-### API Documentation
-| File | What to Change |
-|------|----------------|
-| `packages/api/v1/openapi.ts` | API title, description |
-| `packages/trpc/server/open-api.ts` | API title, description |
+`logo.png` is duplicated by hand in four places — `packages/assets/`,
+`packages/assets/static/`, `apps/remix/public/static/`, `packages/email/static/`
+— with no build step syncing them. Update all four together.
 
-### Email Templates
-| Location | What to Change |
-|----------|----------------|
-| `packages/email/template-components/template-footer.tsx` | Company name, link, color |
-| `packages/email/template-components/template-confirmation-email.tsx` | Welcome text |
-| `packages/email/templates/*.tsx` | Alt text on logo images, preview text |
+`apple-touch-icon.png` has a white background on purpose: iOS composites
+transparency onto black.
 
-### Server-Side References
-| File | What to Change |
-|------|----------------|
-| `packages/lib/server-only/2fa/setup-2fa.ts` | ISSUER constant |
-| `packages/lib/utils/authenticator.ts` | rpName |
-| `packages/lib/jobs/definitions/internal/execute-webhook.handler.ts` | X-*-Secret header |
-| `packages/trpc/server/webhook-router/resend-webhook-call.ts` | X-*-Secret header |
-| `apps/documentation/pages/developers/webhooks.mdx` | X-*-Secret header reference in docs |
+## Logo components
 
-### UI Components
-| File | What to Change |
-|------|----------------|
-| `apps/remix/app/components/general/branding-logo.tsx` | Main app logo component (uses logo.png) |
-| `apps/remix/app/routes/_unauthenticated+/verify-email.$token.tsx` | Email verified confirmation text |
+- `BrandingLogo` — the full stacked logo. Renders both variants and toggles with
+  `dark:hidden` / `hidden dark:block`. Use only where there is vertical room.
+- `BrandingLogoIcon` — the mark. Use in the app header, embeds, and any slot
+  under roughly h-8, where the stacked wordmark would be unreadable. Its fill is
+  hard-coded brand red, not `currentColor`: it is a logo, not an icon.
 
-### Configuration Files
-| File | What to Change |
-|------|----------------|
-| `.env.example` | SMTP defaults |
-| `.devcontainer/devcontainer.json` | Container name |
-| `README.md` | Project description |
-| `docker/README.md` | Docker documentation |
+The Epic logo is stacked (~1.85:1); the old Davinci one was horizontal (3.33:1).
+Do not drop it into a short, wide slot.
 
-## Color Configuration
+Never use `dark:invert` on the logo — it turns the red mark cyan.
 
-### Tailwind Config (`packages/tailwind-config/index.cjs`)
-The `documenso` color palette (internal name kept for compatibility):
-```javascript
-documenso: {
-  DEFAULT: '#1A98CF',  // Davinci Blue
-  50: '#f0f9ff',
-  100: '#e0f2fe',
-  200: '#bae6fd',
-  300: '#7dd3fc',
-  400: '#38bdf8',
-  500: '#1A98CF',      // Primary
-  600: '#0284c7',
-  700: '#0369a1',
-  800: '#075985',
-  900: '#0c4a6e',
-  950: '#082f49',
-}
-```
+## Keeping branding through upstream syncs
 
-### CSS Variables (`packages/ui/styles/theme.css`)
-Primary HSL values:
-- Primary: `197 79% 46%` (Davinci Blue)
-- Primary foreground: `197 79% 10%` (Dark blue for text contrast)
+`tools/upstream-sync/` rewrites branding on every nightly merge from upstream
+Documenso. Its substitution tables live in `branding_resolver/config.py` and
+`config.yaml`. **Any new brand string or colour belongs there too**, or the next
+sync reintroduces the upstream value. Its tests under `tools/upstream-sync/tests/`
+assert the mappings — run them after any change.
 
-## Docker Configuration
+## Deliberately not rebranded
 
-### Image Names
-| File | Image Name |
-|------|------------|
-| `docker/production/compose.yml` | `davinci/davinci-sign:latest` |
-| `docker/build.sh` | `davinci/davinci-sign` |
-| `docker/buildx.sh` | `davinci/davinci-sign` |
-| `docker/buildx-and-push.sh` | `davinci/davinci-sign` |
-| `docker/Dockerfile.chromium` | `davinci/davinci-sign` |
-
-### Container Names
-| File | Container Name |
-|------|----------------|
-| `docker/development/compose.yml` | `davinci-sign-development` |
-| `docker/production/compose.yml` | `davinci-sign-production` |
-| `docker/testing/compose.yml` | `davinci-sign-test` |
-
-### Certificate Paths
-Default certificate path: `/opt/davinci-sign/cert.p12`
-
-Files referencing certificate path:
-- `docker/production/compose.yml`
-- `docker/testing/compose.yml`
-- `docker/README.md`
-- `docker/start.sh`
-- `packages/lib/server-only/cert/cert-status.ts`
-
-## Email Domain
-- System emails: `@davincisolutions.ai`
-- Support email: `support@davincisolutions.ai`
-- No-reply: `noreply@davincisolutions.ai`
-
-## Notes
-
-### Package Names
-Internal package names (`@documenso/*`) are kept unchanged to avoid breaking hundreds of imports. These are not user-facing.
-
-### External Links
-Links to documenso.com and the upstream GitHub repository are kept as credits to the original open-source project.
-
-### Regenerating Assets
-To regenerate logo assets from source files:
-1. Install sharp-cli globally: `npm install -g sharp-cli`
-2. Use the Davinci-Logo.png and davinci-icon.svg as sources
-3. Generate required sizes for each location listed above
+- `@documenso/*` package scope — internal; renaming breaks hundreds of imports.
+- The `documenso` Tailwind palette key and the `documenso-branded` DOM class.
+- `X-Documenso-Secret` and the `X-Documenso-*` email headers — outgoing headers,
+  so renaming breaks consumers, and they are not user-visible.
+- Attribution links to documenso.com and the upstream GitHub repo.
+- `packages/lib/translations/sq/` — Albanian is not in `SUPPORTED_LANGUAGE_CODES`,
+  so the catalogue is unreachable and was left alone.
+- `apps/docs/` product screenshots — documentation content showing the upstream
+  UI, not branding.

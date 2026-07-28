@@ -12,15 +12,15 @@ export function meta({ params: { slug } }: Route.MetaArgs) {
   }
 
   return [
-    { title: 'Davinci Sign - Share' },
-    { description: 'I just signed a document with Davinci Sign!' },
+    { title: 'Epic Sign - Share' },
+    { description: 'I just signed a document with Epic Sign!' },
     {
       property: 'og:title',
-      content: 'Davinci Sign - Professional Electronic Signatures',
+      content: 'Epic Sign - Professional Electronic Signatures',
     },
     {
       property: 'og:description',
-      content: 'I just signed with Davinci Sign!',
+      content: 'I just signed with Epic Sign!',
     },
     {
       property: 'og:type',
@@ -29,10 +29,6 @@ export function meta({ params: { slug } }: Route.MetaArgs) {
     {
       property: 'og:image',
       content: `${NEXT_PUBLIC_WEBAPP_URL()}/share/${slug}/opengraph`,
-    },
-    {
-      name: 'twitter:site',
-      content: '@davincisolutions',
     },
     {
       name: 'twitter:card',
@@ -44,7 +40,7 @@ export function meta({ params: { slug } }: Route.MetaArgs) {
     },
     {
       name: 'twitter:description',
-      content: 'I just signed with Davinci Sign!',
+      content: 'I just signed with Epic Sign!',
     },
   ];
 }
@@ -69,8 +65,8 @@ export const loader = async ({ request, params: { slug } }: Route.LoaderArgs) =>
     return {};
   }
 
-  // Is hardcoded because this whole meta is hardcoded anyway for Davinci Sign.
-  throw redirect('https://davincisolutions.ai');
+  // Is hardcoded because this whole meta is hardcoded anyway for Epic Sign.
+  throw redirect('https://epicgroup.ca');
 };
 
 export default function SharePage() {

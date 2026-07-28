@@ -364,7 +364,7 @@ const seedRemindableDocument = async ({
     teamId: team.id,
     recipients: Array.from(
       { length: recipientCount },
-      (_, i) => `rl-${Date.now()}-${i}-${Math.random().toString(36).slice(2)}@test.davincisolutions.ai`,
+      (_, i) => `rl-${Date.now()}-${i}-${Math.random().toString(36).slice(2)}@test.epicgroup.ca`,
     ),
     fields: [FieldType.SIGNATURE],
   });

@@ -102,7 +102,7 @@ smtp:
   port: 587
   username: apikey
   secure: false
-  fromName: Epic Group e-Sign
+  fromName: Epic Sign
   fromAddress: noreply@epicgroup.ca
 
 oidc:

@@ -17,5 +17,5 @@ smtp:
   port: 1025
   secure: false
   username: staging
-  fromName: Epic Group e-Sign (staging)
+  fromName: Epic Sign (staging)
   fromAddress: noreply-staging@epicgroup.ca

@@ -5,7 +5,7 @@ import { createElement } from 'react';
 
 import { getI18nInstance } from '../../client-only/providers/i18n-server';
 import { NEXT_PUBLIC_WEBAPP_URL } from '../../constants/app';
-import { DAVINCI_INTERNAL_EMAIL } from '../../constants/email';
+import { EPIC_INTERNAL_EMAIL } from '../../constants/email';
 import { renderEmailWithI18N } from '../../utils/render-email-with-i18n';
 import type { EmailContextResponse } from '../email/get-email-context';
 
@@ -46,7 +46,7 @@ export const sendOrganisationDeleteEmail = async ({
   // org's `senderEmail` on `emailContext` could be a custom transport address.
   await mailer.sendMail({
     to: email,
-    from: DAVINCI_INTERNAL_EMAIL,
+    from: EPIC_INTERNAL_EMAIL,
     subject: i18n._(msg`Organisation "${organisationName}" has been deleted`),
     html,
     text,

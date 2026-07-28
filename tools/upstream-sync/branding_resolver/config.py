@@ -23,7 +23,7 @@ class BrandingConfig(BaseSettings):
     noreply_email: str = Field(default="noreply@davincisolutions.ai", description="No-reply email address")
 
     # Colors
-    primary_hex: str = Field(default="#1A98CF", description="Primary brand color hex")
+    primary_hex: str = Field(default="#358ab5", description="Primary brand color hex")
     primary_hsl: str = Field(default="197 79% 46%", description="Primary brand color HSL")
 
     # Upstream identifiers
@@ -157,26 +157,27 @@ class BrandingConfig(BaseSettings):
 
 BRANDING_SUBSTITUTIONS: list[tuple[str, str]] = [
     # Full company / legal name
-    ("Documenso, Inc.", "Davinci AI Solutions"),
+    ("Documenso, Inc.", "Epic Group"),
     # Email addresses (before bare domain)
-    ("@documenso.com", "@davincisolutions.ai"),
+    ("@documenso.com", "@epicgroup.ca"),
     # Bare domain
-    ("documenso.com", "davincisolutions.ai"),
+    ("documenso.com", "epicgroup.ca"),
     # Docker image (before generic brand name)
-    ("documenso/documenso", "davinci/davinci-sign"),
+    ("documenso/documenso", "epic-group-software/eg-esign"),
     # Certificate path
-    ("/opt/documenso/cert.p12", "/opt/davinci-sign/cert.p12"),
+    ("/opt/documenso/cert.p12", "/opt/eg-esign/cert.p12"),
     # Container names
-    ("documenso-development", "davinci-sign-development"),
-    ("documenso-production", "davinci-sign-production"),
-    ("documenso-test", "davinci-sign-test"),
-    # Code symbols (before generic brand name)
-    ("DOCUMENSO_INTERNAL_EMAIL", "DAVINCI_INTERNAL_EMAIL"),
-    ("X-Documenso-Secret", "X-Davinci-Secret"),
+    ("documenso-development", "eg-esign-development"),
+    ("documenso-production", "eg-esign-production"),
+    ("documenso-test", "eg-esign-test"),
+    # Code symbols (before generic brand name).
+    # X-Documenso-Secret is deliberately NOT renamed: it is an outgoing webhook
+    # header, so changing it breaks every consumer. Not user-visible branding.
+    ("DOCUMENSO_INTERNAL_EMAIL", "EPIC_INTERNAL_EMAIL"),
     # 2FA issuer
-    ("Documenso", "Davinci Sign"),
-    # Color hex (upstream green -> Davinci blue)
-    ("#7AC455", "#1A98CF"),
+    ("Documenso", "Epic Sign"),
+    # Color hex (upstream green -> epic-blue)
+    ("#7AC455", "#358ab5"),
 ]
 
 # --- High-precision subset for the all-files post-merge sweep ---
@@ -192,17 +193,16 @@ BRANDING_SUBSTITUTIONS: list[tuple[str, str]] = [
 # symbols that never went through the conflict resolver (e.g. an upstream file
 # that newly imports DOCUMENSO_INTERNAL_EMAIL and merged without a conflict).
 SYMBOL_SAFE_SUBSTITUTIONS: list[tuple[str, str]] = [
-    ("Documenso, Inc.", "Davinci AI Solutions"),
-    ("@documenso.com", "@davincisolutions.ai"),
-    ("documenso.com", "davincisolutions.ai"),
-    ("documenso/documenso", "davinci/davinci-sign"),
-    ("/opt/documenso/cert.p12", "/opt/davinci-sign/cert.p12"),
-    ("documenso-development", "davinci-sign-development"),
-    ("documenso-production", "davinci-sign-production"),
-    ("documenso-test", "davinci-sign-test"),
-    ("DOCUMENSO_INTERNAL_EMAIL", "DAVINCI_INTERNAL_EMAIL"),
-    ("X-Documenso-Secret", "X-Davinci-Secret"),
-    ("#7AC455", "#1A98CF"),
+    ("Documenso, Inc.", "Epic Group"),
+    ("@documenso.com", "@epicgroup.ca"),
+    ("documenso.com", "epicgroup.ca"),
+    ("documenso/documenso", "epic-group-software/eg-esign"),
+    ("/opt/documenso/cert.p12", "/opt/eg-esign/cert.p12"),
+    ("documenso-development", "eg-esign-development"),
+    ("documenso-production", "eg-esign-production"),
+    ("documenso-test", "eg-esign-test"),
+    ("DOCUMENSO_INTERNAL_EMAIL", "EPIC_INTERNAL_EMAIL"),
+    ("#7AC455", "#358ab5"),
 ]
 
 

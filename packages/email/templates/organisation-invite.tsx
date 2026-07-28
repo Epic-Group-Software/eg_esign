@@ -17,14 +17,14 @@ export type OrganisationInviteEmailProps = {
 
 export const OrganisationInviteEmailTemplate = ({
   assetBaseUrl = 'http://localhost:3002',
-  baseUrl = 'https://davincisolutions.ai',
+  baseUrl = 'https://epicgroup.ca',
   senderName = 'John Doe',
   organisationName = 'Organisation Name',
   token = '',
 }: OrganisationInviteEmailProps) => {
   const { _ } = useLingui();
 
-  const previewText = msg`Accept invitation to join an organisation on Davinci Sign`;
+  const previewText = msg`Accept invitation to join an organisation on Epic Sign`;
 
   return (
     <Html>
@@ -42,7 +42,7 @@ export const OrganisationInviteEmailTemplate = ({
 
             <Section className="p-2 text-muted-foreground">
               <Text className="text-center font-medium text-foreground text-lg">
-                <Trans>Join {organisationName} on Davinci Sign</Trans>
+                <Trans>Join {organisationName} on Epic Sign</Trans>
               </Text>
 
               <Text className="my-1 text-center text-base">

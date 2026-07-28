@@ -11,8 +11,8 @@ def _write(root, rel, content):
 
 
 def test_present_markers_pass(tmp_path):
-    _write(tmp_path, "a/file.ts", "uses resolveEmailTransport and DAVINCI_INTERNAL_EMAIL")
-    manifest = {"a/file.ts": ["resolveEmailTransport", "DAVINCI_INTERNAL_EMAIL"]}
+    _write(tmp_path, "a/file.ts", "uses resolveEmailTransport and EPIC_INTERNAL_EMAIL")
+    manifest = {"a/file.ts": ["resolveEmailTransport", "EPIC_INTERNAL_EMAIL"]}
     assert regression_guard.assert_markers(tmp_path, manifest) == []
 
 
@@ -34,8 +34,8 @@ def test_missing_file_is_a_violation(tmp_path):
 
 
 def test_multiple_markers_partial_miss(tmp_path):
-    _write(tmp_path, "f.ts", "has DAVINCI_INTERNAL_EMAIL only")
-    manifest = {"f.ts": ["DAVINCI_INTERNAL_EMAIL", "resolveEmailTransport"]}
+    _write(tmp_path, "f.ts", "has EPIC_INTERNAL_EMAIL only")
+    manifest = {"f.ts": ["EPIC_INTERNAL_EMAIL", "resolveEmailTransport"]}
     violations = regression_guard.assert_markers(tmp_path, manifest)
     assert len(violations) == 1
     assert "resolveEmailTransport" in violations[0]

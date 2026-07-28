@@ -18,15 +18,15 @@ export type OrganisationJoinEmailProps = {
 
 export const OrganisationJoinEmailTemplate = ({
   assetBaseUrl = 'http://localhost:3002',
-  baseUrl = 'https://davincisolutions.ai',
+  baseUrl = 'https://epicgroup.ca',
   memberName = 'John Doe',
-  memberEmail = 'johndoe@davincisolutions.ai',
+  memberEmail = 'johndoe@epicgroup.ca',
   organisationName = 'Organisation Name',
   organisationUrl = 'demo',
 }: OrganisationJoinEmailProps) => {
   const { _ } = useLingui();
 
-  const previewText = msg`A member has joined your organisation on Davinci Sign`;
+  const previewText = msg`A member has joined your organisation on Epic Sign`;
 
   return (
     <Html>

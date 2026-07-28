@@ -29,7 +29,7 @@ import { type Field, RecipientRole, SigningStatus } from '@prisma/client';
 import { LucideChevronDown, LucideChevronUp } from 'lucide-react';
 import { useEffect, useId, useLayoutEffect, useMemo, useState } from 'react';
 
-import { BrandingLogo } from '~/components/general/branding-logo';
+import { BrandingLogoIcon } from '~/components/general/branding-logo-icon';
 import PDFViewerLazy from '~/components/general/pdf-viewer/pdf-viewer-lazy';
 import { injectCss } from '~/utils/css-vars';
 
@@ -510,7 +510,7 @@ export const EmbedSignDocumentV1ClientPage = ({
             <span>
               <Trans>Powered by</Trans>
             </span>
-            <BrandingLogo className="ml-2 inline-block h-[14px]" />
+            <BrandingLogoIcon className="ml-2 inline-block h-[14px]" />
           </div>
         )}
       </div>

@@ -1,6 +1,6 @@
 # @documenso/docs
 
-The Documenso documentation site, built with [Next.js](https://nextjs.org/) and [Fumadocs](https://fumadocs.dev/). Published at [docs.davincisolutions.ai](https://docs.davincisolutions.ai).
+The Epic Sign documentation site, built with [Next.js](https://nextjs.org/) and [Fumadocs](https://fumadocs.dev/). Published at [docs.epicgroup.ca](https://docs.epicgroup.ca).
 
 Content lives under `content/docs/` as MDX. See [WRITING_STYLE.md](../../WRITING_STYLE.md) for the documentation writing conventions.
 

@@ -11,7 +11,7 @@ import { TemplateForgotPassword } from '../template-components/template-forgot-p
 export type ForgotPasswordTemplateProps = Partial<TemplateForgotPasswordProps>;
 
 export const ForgotPasswordTemplate = ({
-  resetPasswordLink = 'https://davincisolutions.ai',
+  resetPasswordLink = 'https://epicgroup.ca',
   assetBaseUrl = 'http://localhost:3002',
 }: ForgotPasswordTemplateProps) => {
   const { _ } = useLingui();
@@ -26,7 +26,7 @@ export const ForgotPasswordTemplate = ({
         <Preview>{_(previewText)}</Preview>
 
         <Section>
-          <Container className="mx-auto mb-2 mt-8 max-w-xl rounded-lg border border-solid border-border p-4 backdrop-blur-sm">
+          <Container className="mx-auto mt-8 mb-2 max-w-xl rounded-lg border border-border border-solid p-4 backdrop-blur-sm">
             <Section>
               {branding.brandingEnabled && branding.brandingLogo ? (
                 <Img src={branding.brandingLogo} alt="Branding Logo" className="mb-4 h-6" />
@@ -34,10 +34,7 @@ export const ForgotPasswordTemplate = ({
                 <TemplateBrandingLogo assetBaseUrl={assetBaseUrl} className="mb-4 h-6" />
               )}
 
-              <TemplateForgotPassword
-                resetPasswordLink={resetPasswordLink}
-                assetBaseUrl={assetBaseUrl}
-              />
+              <TemplateForgotPassword resetPasswordLink={resetPasswordLink} assetBaseUrl={assetBaseUrl} />
             </Section>
           </Container>
 
