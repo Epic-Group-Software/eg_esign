@@ -37,7 +37,7 @@ _MAX_EXPLORATION_TURNS = 5
 
 class ResolveConflictInput(BaseModel):
     """Provide a fully merged version of the file that integrates upstream
-    changes while preserving Davinci Sign branding.  Use this when you
+    changes while preserving Epic Sign branding.  Use this when you
     can intelligently combine both sides."""
 
     file_path: str = Field(description="The path to the conflicted file.")
@@ -51,7 +51,7 @@ class ResolveConflictInput(BaseModel):
 
 
 class KeepOursInput(BaseModel):
-    """Keep our (Davinci Sign) version of the file entirely, discarding
+    """Keep our (Epic Sign) version of the file entirely, discarding
     upstream changes.  Use when the file is purely branding."""
 
     file_path: str = Field(description="The path to the conflicted file.")
@@ -180,15 +180,15 @@ class BrandingAgent:
         )
 
         return f"""\
-You are a branding-aware merge conflict resolver for "Davinci Sign", a fork of the
+You are a branding-aware merge conflict resolver for "Epic Sign", a fork of the
 open-source Documenso e-signing platform.
 
 ## Brand Identity
-- Product name: "Davinci Sign" (by "Davinci AI Solutions")
-- Primary color: #1A98CF (Davinci Blue) — upstream uses #7AC455 (green)
-- Email domain: @davincisolutions.ai
+- Product name: "Epic Sign" (by "Epic Group")
+- Primary color: #358ab5 (epic-blue) — upstream uses #7AC455 (green)
+- Email domain: @epicgroup.ca
 - Docker image: davinci/davinci-sign (not documenso/documenso)
-- Support email: support@davincisolutions.ai
+- Support email: support@epicgroup.ca
 
 ## Substitution Rules
 When resolving conflicts, apply these brand substitutions:
@@ -202,14 +202,14 @@ When resolving conflicts, apply these brand substitutions:
 1. NEVER change `@documenso/*` package scopes — these are internal and must remain.
 2. NEVER remove upstream credit links (github.com/documenso, documenso.com/oss, etc.).
 3. The Tailwind color KEY is named `documenso` internally — do NOT rename it.
-   Only the color VALUES should be Davinci Blue (#1A98CF and its palette).
+   Only the color VALUES should be epic-blue (#358ab5 and its palette).
 4. Keep HSL values: Primary 197 79% 46%, foreground 197 79% 10%.
 
 ## UI Customisations
 These are intentional application-level branding changes in our fork:
 - In the Email Sender dropdown (`meta.emailId`), the default/fallback option
-  label is "Davinci Sign" (upstream uses "Documenso"). This appears as
-  `<SelectItem value={{'-1'}}>Davinci Sign</SelectItem>` in the settings dialog.
+  label is "Epic Sign" (upstream uses "Documenso"). This appears as
+  `<SelectItem value={{'-1'}}>Epic Sign</SelectItem>` in the settings dialog.
 - The `DOCUMENT_DISTRIBUTION_METHODS` constant and its usage are upstream
   functional code — do NOT replace with email sender options.
 
@@ -433,7 +433,7 @@ you must resolve.  When you have enough context, call one of the resolution tool
 
             if f.full_ours is not None:
                 ours_preview = _truncate(f.full_ours, 6000)
-                parts.append(f"**Our version (Davinci Sign):**\n```\n{ours_preview}\n```\n")
+                parts.append(f"**Our version (Epic Sign):**\n```\n{ours_preview}\n```\n")
 
             if f.full_theirs is not None:
                 theirs_preview = _truncate(f.full_theirs, 6000)
@@ -476,7 +476,7 @@ you must resolve.  When you have enough context, call one of the resolution tool
                 f"Resolve this ONE conflict hunk from `{file_conflict.path}` "
                 f"(hunk {i + 1} of {len(file_conflict.hunks)}).\n\n"
                 f"**Context before:**\n```\n{hunk.context_before}\n```\n\n"
-                f"**Our version (Davinci Sign):**\n```\n{hunk.ours}\n```\n\n"
+                f"**Our version (Epic Sign):**\n```\n{hunk.ours}\n```\n\n"
                 f"**Upstream version (Documenso):**\n```\n{hunk.theirs}\n```\n\n"
                 f"**Context after:**\n```\n{hunk.context_after}\n```\n\n"
                 f"Return ONLY the replacement text for this hunk using the `resolve_hunk` tool. "
