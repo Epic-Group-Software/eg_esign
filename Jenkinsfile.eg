@@ -290,9 +290,16 @@ spec:
 
 def podKaniko() {
     // trivy rides along to scan the pushed image without a second pod.
-    // 14Gi: the image build runs tsc with an 8Gi heap (see docker/Dockerfile),
-    // and kaniko needs headroom on top for its layer snapshots — at 8Gi the
-    // build was OOM-killed at exit 134. Requests stay low so it still schedules.
+    // The image build runs tsc with an 8Gi heap (see docker/Dockerfile) and
+    // kaniko needs headroom for layer snapshots, so the limit is 14Gi.
+    //
+    // The memory REQUEST matters just as much. Eviction ranks pods by usage
+    // above their request, not against their limit: at 4Gi requested and
+    // ~8.7Gi actually used, this pod was the first thing kubelet killed when a
+    // node (137-177% overcommitted on memory limits) ran out of RAM. Requesting
+    // 10Gi reflects real usage, so it schedules where the memory exists and is
+    // no longer the eviction target. Nodes have 16-20Gi free by request.
+    // CPU request stays low — that dimension is the constrained one.
     return '''
 apiVersion: v1
 kind: Pod
@@ -309,7 +316,7 @@ spec:
     command: ['sleep', '9999']
     resources:
       requests:
-        memory: "4Gi"
+        memory: "10Gi"
         cpu: "400m"
       limits:
         memory: "14Gi"
