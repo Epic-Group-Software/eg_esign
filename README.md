@@ -56,8 +56,10 @@ PRs run **Lint** (biome, changed files only), **Unit Tests** (vitest), **Build &
 
 ### Operational notes
 
-- **Staging cannot send real email.** It delivers to an in-cluster mailpit + SpamAssassin sink; only production uses SendGrid. Read captured mail with
-  `kubectl -n eg-esign-staging port-forward svc/eg-esign-mailpit 8025:8025`.
+- **Staging cannot send real email.** It delivers to an in-cluster mailpit + SpamAssassin sink; only production uses SendGrid. Captured mail is at
+  <https://esign-staging.epicgroup.ca/mailpit/> (user `admin`, password in the
+  `eg-esign-mailpit-ui-password` Jenkins credential). Production runs no mailpit
+  and does not expose the path at all.
 - **DNS is manual.** There is no external-dns on the cluster; A records are created against the GoDaddy API (the same credential cert-manager uses for DNS-01).
 - **Onboarding a partner tenant takes two steps**: admin-consent + assign them in the `Epic Group e-Sign` enterprise app, *and* add their domain to `config.allowedSignupDomains`. Miss the second and their users authenticate but get no account.
 - **Prod is not yet provisioned** — only the OIDC credentials exist with a `-prod` suffix; the rest (`eg-esign-*-prod`) and a real signing certificate are still required before merging to `main`.

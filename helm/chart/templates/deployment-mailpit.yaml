@@ -22,6 +22,15 @@ spec:
           env:
             - name: MP_DATABASE
               value: /data/mailpit.db
+            # Served under a sub-path of the app host, so mailpit has to know
+            # its own webroot or every asset request 404s.
+            - name: MP_WEBROOT
+              value: {{ .Values.mailpit.webroot | quote }}
+            - name: MP_UI_AUTH
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "app.fullname" . }}-secret
+                  key: MAILPIT_UI_AUTH
             - name: MP_MAX_MESSAGES
               value: "5000"
             # The staging SMTP password is a placeholder, not a real secret.
@@ -38,13 +47,13 @@ spec:
               containerPort: {{ .Values.service.mailpit.smtpPort }}
           livenessProbe:
             httpGet:
-              path: /livez
+              path: {{ .Values.mailpit.webroot }}livez
               port: http
             initialDelaySeconds: 10
             periodSeconds: 15
           readinessProbe:
             httpGet:
-              path: /readyz
+              path: {{ .Values.mailpit.webroot }}readyz
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10

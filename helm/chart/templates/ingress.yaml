@@ -20,6 +20,15 @@ spec:
     - host: {{ include "app.fqdn" . | quote }}
       http:
         paths:
+          {{- if .Values.mailpit.enabled }}
+          - path: /mailpit
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "app.fullname" . }}-mailpit
+                port:
+                  number: {{ .Values.service.mailpit.httpPort }}
+          {{- end }}
           - path: /
             pathType: Prefix
             backend:
