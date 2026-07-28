@@ -1,17 +1,22 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-node_modules
+# Docker only recurses when the pattern starts with **/, so a bare
+# `node_modules` matches the root one and nothing under apps/ or packages/.
+# Without the ** the whole workspace's dependency and build output was being
+# uploaded as build context, and tarring apps/*/.next/node_modules symlinks
+# fails outright on Windows ("archive/tar: unknown file mode").
+**/node_modules
 .pnp
 .pnp.js
 
 # testing
-coverage
+**/coverage
 
-# next.js
-.next/
-out/
-build
+# next.js / build output — regenerated inside the image
+**/.next/
+**/out/
+**/build
 
 # misc
 .DS_Store
@@ -35,7 +40,7 @@ yarn-error.log*
 **/*.pyc
 
 # turbo
-.turbo
+**/.turbo
 
 # vercel
 .vercel

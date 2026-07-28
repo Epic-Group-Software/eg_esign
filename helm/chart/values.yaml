@@ -1,0 +1,170 @@
+namespace: eg-esign-staging
+fqdn: esign-staging.epicgroup.ca
+
+# Overridden per deploy with --set tag=<immutable build tag>.
+tag: staging
+
+image:
+  app:
+    repository: epicregistry.azurecr.io/epic-group-software/eg-esign
+    pullPolicy: Always
+  postgres:
+    repository: postgres
+    tag: "17"
+  minio:
+    repository: minio/minio
+    tag: latest
+  mc:
+    repository: minio/mc
+    tag: latest
+
+imagePullSecrets:
+  - name: acr-pull-secret
+
+# Staging uses the cluster `default` class (reclaimPolicy: Delete) — its data is
+# disposable. Production creates its own Retain class; see values-production.yaml.
+persistence:
+  createStorageClass: false
+  storageClassName: default
+  skuName: Premium_LRS
+
+app:
+  replicaCount: 1
+  # tsc-free at runtime, but PDF rendering is memory-hungry.
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 1500m
+      memory: 2Gi
+  # The image runs as uid/gid 1001 (docker/Dockerfile). Forcing anything else
+  # makes the mounted signing certificate unreadable.
+  securityContext:
+    runAsUser: 1001
+    runAsGroup: 1001
+    fsGroup: 1001
+
+postgres:
+  auth:
+    username: eg_esign
+    database: eg_esign
+    password: ""
+  sslMode: disable
+  persistence:
+    size: 10Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+minio:
+  auth:
+    rootUser: eg-esign
+    rootPassword: ""
+  bucket: eg-esign
+  persistence:
+    size: 50Gi
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+# In-cluster mail sink. Staging only — production sends via SendGrid, and a
+# shared credential would let staging email real signers.
+mailpit:
+  enabled: false
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+  spamassassin:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+smtp:
+  transport: smtp-auth
+  host: smtp.sendgrid.net
+  port: 587
+  username: apikey
+  secure: false
+  fromName: Epic Group e-Sign
+  fromAddress: noreply@epicgroup.ca
+
+oidc:
+  # /organizations, not a tenant-specific issuer — the app registration is
+  # multi-tenant and a pinned tenant would reject partner tenants.
+  wellKnown: https://login.microsoftonline.com/organizations/v2.0/.well-known/openid-configuration
+  providerLabel: Sign in with Microsoft
+
+signing:
+  transport: local
+  path: /opt/eg-esign/cert.p12
+
+# Populated at deploy time from Jenkins credentials (see jenkins/deploy.groovy).
+secrets:
+  nextauthSecret: ""
+  encryptionKey: ""
+  encryptionSecondaryKey: ""
+  smtpPassword: ""
+  signingPassphrase: ""
+  oidcClientId: ""
+  oidcClientSecret: ""
+
+certificate:
+  # base64 of the .p12, passed with --set from the Jenkins file credential.
+  p12Base64: ""
+
+service:
+  app:
+    type: ClusterIP
+    port: 3000
+  postgres:
+    type: ClusterIP
+    port: 5432
+  minio:
+    type: ClusterIP
+    apiPort: 9000
+    consolePort: 9001
+  mailpit:
+    type: ClusterIP
+    httpPort: 8025
+    smtpPort: 1025
+
+ingress:
+  enabled: true
+  className: nginx
+  tls:
+    secretName: eg-esign-staging-tls
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: 100m
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+
+config:
+  logLevel: info
+  uploadTransport: s3
+  uploadRegion: us-east-1
+  documentSizeUploadLimit: "50"
+  disableSignup: "true"
+  # Entra authenticates any consented tenant; this decides who gets an account.
+  allowedSignupDomains: epicgroup.ca
+  billingEnabled: "false"
+  disableTelemetry: "true"

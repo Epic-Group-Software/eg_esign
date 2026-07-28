@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "app.fullname" . }}-config
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+data:
+  PORT: {{ .Values.service.app.port | quote }}
+  NODE_ENV: production
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+
+  NEXT_PUBLIC_WEBAPP_URL: {{ printf "https://%s" (include "app.fqdn" .) | quote }}
+  NEXT_PRIVATE_INTERNAL_WEBAPP_URL: {{ printf "http://%s:%v" (include "app.fullname" .) .Values.service.app.port | quote }}
+
+  # S3 transport against the in-cluster MinIO.
+  NEXT_PUBLIC_UPLOAD_TRANSPORT: {{ .Values.config.uploadTransport | quote }}
+  NEXT_PRIVATE_UPLOAD_ENDPOINT: {{ printf "http://%s-minio:%v" (include "app.fullname" .) .Values.service.minio.apiPort | quote }}
+  NEXT_PRIVATE_UPLOAD_FORCE_PATH_STYLE: "true"
+  NEXT_PRIVATE_UPLOAD_REGION: {{ .Values.config.uploadRegion | quote }}
+  NEXT_PRIVATE_UPLOAD_BUCKET: {{ .Values.minio.bucket | quote }}
+  NEXT_PRIVATE_UPLOAD_ACCESS_KEY_ID: {{ .Values.minio.auth.rootUser | quote }}
+
+  NEXT_PRIVATE_SMTP_TRANSPORT: {{ .Values.smtp.transport | quote }}
+  NEXT_PRIVATE_SMTP_HOST: {{ .Values.smtp.host | quote }}
+  NEXT_PRIVATE_SMTP_PORT: {{ .Values.smtp.port | quote }}
+  NEXT_PRIVATE_SMTP_USERNAME: {{ .Values.smtp.username | quote }}
+  NEXT_PRIVATE_SMTP_SECURE: {{ .Values.smtp.secure | quote }}
+  NEXT_PRIVATE_SMTP_FROM_NAME: {{ .Values.smtp.fromName | quote }}
+  NEXT_PRIVATE_SMTP_FROM_ADDRESS: {{ .Values.smtp.fromAddress | quote }}
+
+  NEXT_PRIVATE_SIGNING_TRANSPORT: {{ .Values.signing.transport | quote }}
+  NEXT_PRIVATE_SIGNING_LOCAL_FILE_PATH: {{ .Values.signing.path | quote }}
+
+  NEXT_PRIVATE_OIDC_WELL_KNOWN: {{ .Values.oidc.wellKnown | quote }}
+  NEXT_PRIVATE_OIDC_PROVIDER_LABEL: {{ .Values.oidc.providerLabel | quote }}
+
+  NEXT_PUBLIC_DISABLE_SIGNUP: {{ .Values.config.disableSignup | quote }}
+  NEXT_PRIVATE_ALLOWED_SIGNUP_DOMAINS: {{ .Values.config.allowedSignupDomains | quote }}
+  NEXT_PUBLIC_FEATURE_BILLING_ENABLED: {{ .Values.config.billingEnabled | quote }}
+  NEXT_PUBLIC_DOCUMENT_SIZE_UPLOAD_LIMIT: {{ .Values.config.documentSizeUploadLimit | quote }}
+  DOCUMENSO_DISABLE_TELEMETRY: {{ .Values.config.disableTelemetry | quote }}

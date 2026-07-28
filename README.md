@@ -29,42 +29,38 @@ Professional electronic signature solution by Davinci AI Solutions.
 
 ## Epic Group e-Sign — Deployment Objective & Status
 
-> This fork (`Davinci-Technology/eg_esign`) exists to stand up a **dedicated, isolated Documenso instance for Epic Group**, fully separated from the SaaS `davinci-sign` instance. It is the Stage-2 destination of the eg_intranet DocuSign → Quill → Documenso e-signature migration.
+> `Epic-Group-Software/eg_esign` is a **dedicated, isolated Documenso instance for Epic Group**, separate from the SaaS `davinci-sign` instance.
 
-**Objective:** Two environments — **prod** (`esign.epicgroup.ca`, branch `main` → namespace `eg-esign-prod`) and **staging** (`esign-staging.epicgroup.ca`, branch `staging` → namespace `eg-esign-staging`) — on the **Epic Group AKS cluster**, built and shipped by **Jenkins** from this fork (`main → prod`, `staging → staging`), with its own registry (`epicregistry.azurecr.io`), in-cluster Postgres + MinIO, Azure AD (Epic Group tenant) SSO, and signup locked to `epicgroup.ca`.
+**Two environments on the Epic Group AKS cluster (`eg-k8s-01`)**, built and shipped by Jenkins (`Epic Group/eg-esign` multibranch, `Jenkinsfile.eg`):
 
-**Detailed plan:** [`docs/superpowers/plans/2026-07-09-eg-esign-ci-pipeline.md`](docs/superpowers/plans/2026-07-09-eg-esign-ci-pipeline.md) · **Deploy runbook** lives in the `eg_intranet` repo (`dev_docs/migration/documenso-eg-instance-deployment-runbook.md`).
+| Branch | Env | Namespace | Host |
+|---|---|---|---|
+| `staging` | staging | `eg-esign-staging` | `esign-staging.epicgroup.ca` |
+| `main` | prod | `eg-esign-prod` | `esign.epicgroup.ca` |
 
-### ✅ Done — repo-side deliverables (branch `feature/eg-esign-ci`, PR #1)
+Registry `epicregistry.azurecr.io`, in-cluster Postgres 17 + MinIO, multi-tenant Entra SSO, signup locked to `epicgroup.ca`.
 
-| # | Deliverable | Location |
-|---|---|---|
-| 1 | Fork created from `Davinci-Technology/documenso` (`upstream` remote wired, periodic upstream-sync branches) | this repo |
-| 2 | Kustomize **base** — app deployment, configmap (OIDC on, signup locked), ingress, PDB | `k8s/eg-esign/base/` |
-| 3 | **In-cluster Postgres 17** StatefulSet + PVC (new — SaaS used Azure PostgreSQL) | `k8s/eg-esign/base/postgres-*.yaml` |
-| 4 | **In-cluster MinIO** StatefulSet + PVC (S3 upload transport) | `k8s/eg-esign/base/minio-*.yaml` |
-| 5 | **staging + prod overlays** — namespace, host, TLS secret, image tag per env | `k8s/eg-esign/overlays/{staging,prod}/` |
-| 6 | **`Jenkinsfile.eg`** — multibranch branch→env→namespace pipeline (Kaniko build → `epicregistry.azurecr.io` → `kubectl apply -k`, health-check + rollout-undo) | `Jenkinsfile.eg` |
-| 7 | CI pipeline implementation plan (ground-truth deltas documented) | `docs/superpowers/plans/2026-07-09-...md` |
+### Layout
 
-### ⛔ Not Done — merge, external wiring & go-live (CI plan Task 6)
+| What | Where |
+|---|---|
+| Helm chart (`values.yaml` + `values-{staging,production}.yaml`) | `helm/chart/` |
+| Pipeline steps (checks, security scan, helm lint, image build, deploy) | `jenkins/*.groovy` |
+| Pipeline definition | `Jenkinsfile.eg` |
+| Trivy baselines (source tree / container image) | `.trivyignore`, `.trivyignore-image` |
+| Gitleaks config | `gitleaks.toml` |
 
-| # | Item | Blocking state |
-|---|---|---|
-| 1 | **Merge PR #1** — repo work lives only on `feature/eg-esign-ci`; neither `main` nor `staging` carries `k8s/eg-esign/` or `Jenkinsfile.eg` yet | PR #1 **OPEN, unmerged** |
-| 2 | Publish infra to **`main` + `staging`** deploy branches | not done |
-| 3 | **DNS**: `esign.epicgroup.ca` + `esign-staging.epicgroup.ca` → `130.107.18.187` (eg ingress) | both records **do not resolve (NXDOMAIN)** |
-| 4 | **Jenkins multibranch job** "eg-esign" created & scanned | not created — pipeline **never run** |
-| 5 | Jenkins **credentials**: `eg-aks-kubeconfig`, `epicregistry-*`, per-env `eg-esign-*` secrets (nextauth, **encryption keys**, postgres/minio/smtp passwords, cert passphrase, `.p12`) | not provisioned |
-| 6 | **Azure AD app registration** (Epic Group tenant, OIDC redirect URIs) | not created |
-| 7 | Signing **`.p12` certificate** (real Epic Group cert for prod) | not provisioned |
-| 8 | **Live instances** deployed (`/api/health` green, LE TLS) in either namespace | nothing deployed |
-| 9 | End-to-end verify (Azure AD sign-in → upload → sign → download) | not run |
-| 10 | **eg_intranet wiring** — Documenso `ServiceTenant` + webhook secret pointed at this instance; staging canary | not started |
+### CI
 
-**Bottom line:** the repo-side CI/CD + k8s scaffolding is **complete and reviewed on PR #1**, but **nothing is deployed** — no merge, no DNS, no Jenkins job, no live instance. Go-live is gated on merging PR #1 and completing the external one-time wiring above.
+PRs run **Lint** (biome, changed files only), **Unit Tests** (vitest), **Build & Typecheck**, **Security Scan** (gitleaks + Trivy) and **Helm Lint**, each reported as its own GitHub commit status. Merges to `staging`/`main` additionally build the image with Kaniko, scan it, and `helm upgrade --install`.
 
----
+### Operational notes
+
+- **Staging cannot send real email.** It delivers to an in-cluster mailpit + SpamAssassin sink; only production uses SendGrid. Read captured mail with
+  `kubectl -n eg-esign-staging port-forward svc/eg-esign-mailpit 8025:8025`.
+- **DNS is manual.** There is no external-dns on the cluster; A records are created against the GoDaddy API (the same credential cert-manager uses for DNS-01).
+- **Onboarding a partner tenant takes two steps**: admin-consent + assign them in the `Epic Group e-Sign` enterprise app, *and* add their domain to `config.allowedSignupDomains`. Miss the second and their users authenticate but get no account.
+- **Prod is not yet provisioned** — only the OIDC credentials exist with a `-prod` suffix; the rest (`eg-esign-*-prod`) and a real signing certificate are still required before merging to `main`.
 
 ## About Davinci Sign
 

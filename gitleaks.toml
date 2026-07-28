@@ -1,0 +1,38 @@
+# Gitleaks config for eg-esign CI (jenkins/security-scan.groovy).
+# Extends the default ruleset; adds path exclusions only.
+#
+# NOTE: paths are matched against the path gitleaks was given, which is
+# absolute when scanning a mounted directory. Do not anchor with ^.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Non-source paths and known-public upstream test fixtures"
+paths = [
+    # Dependency and build output — absent from a clean checkout, but CI
+    # workspaces are reused.
+    '''(^|/)node_modules/''',
+    '''(^|/)\.git/''',
+    '''(^|/)dist/''',
+    '''(^|/)\.next/''',
+    '''(^|/)\.turbo/''',
+    '''(^|/)generated/''',
+    '''package-lock\.json$''',
+
+    # Upstream Documenso fixtures and docs: apps/remix/example/cert.p12 is a
+    # publicly-distributed self-signed e2e cert, .env.example holds
+    # placeholders (CAFEBABE/DEADBEEF), and the docs tree is full of
+    # illustrative API keys and curl auth-header snippets.
+    '''(^|/)apps/remix/example/''',
+    '''(^|/)apps/docs/content/''',
+    '''(^|/)packages/app-tests/''',
+    '''(^|/)patches/''',
+    '''\.env\.example$''',
+
+    # This pipeline's own `curl -u "$GIT_USER:$GIT_PASS"` — credential
+    # references, not credentials.
+    '''(^|/)jenkins/.*\.groovy$''',
+    '''(^|/)Jenkinsfile(\.[A-Za-z0-9]+)?$''',
+    '''(^|/)tools/upstream-sync/''',
+]

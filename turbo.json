@@ -30,6 +30,10 @@
     "dev:test": {
       "cache": false
     },
+    "test": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
     "test:e2e": {
       "dependsOn": ["^build"],
       "cache": false
