@@ -41,11 +41,14 @@ data:
   NEXT_PRIVATE_SIGNING_TRANSPORT: "local"
   NEXT_PRIVATE_SIGNING_LOCAL_FILE_PATH: "/opt/eg-esign/cert.p12"
 
-  # OIDC (Azure AD, Epic Group tenant) — delta #4
-  NEXT_PRIVATE_OIDC_WELL_KNOWN: "https://login.microsoftonline.com/f42ecea6-d935-484f-91e2-f3c236207764/v2.0/.well-known/openid-configuration"
+  # OIDC (Entra, multi-tenant). /organizations is required — a tenant-specific
+  # issuer rejects partner tenants. Was pointed at f42ecea6..., which is not
+  # Epic Group (epicgroup.ca is f0073409-01ad-467a-9cb3-7506cece34c1).
+  NEXT_PRIVATE_OIDC_WELL_KNOWN: "https://login.microsoftonline.com/organizations/v2.0/.well-known/openid-configuration"
   NEXT_PRIVATE_OIDC_PROVIDER_LABEL: "Sign in with Microsoft"
 
-  # Signup lockdown — delta #4
+  # Second gate: Entra authenticates any consented tenant, this allowlist
+  # decides who gets an account. Add a partner's domain when onboarded.
   NEXT_PUBLIC_DISABLE_SIGNUP: "true"
   NEXT_PRIVATE_ALLOWED_SIGNUP_DOMAINS: "epicgroup.ca"
 
