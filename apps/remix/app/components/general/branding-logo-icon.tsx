@@ -13,7 +13,7 @@ export type LogoProps = SVGAttributes<SVGSVGElement>;
  */
 export const BrandingLogoIcon = ({ ...props }: LogoProps) => {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 155 125" {...props}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 145 145" {...props}>
       <g fill="#e91d2d">
         <path
           d="M163.1448,240.3631V306.989h65.8163a1.011,1.011,0,0,1,0-.1557,70.3557,70.3557,0,0,0-65.7683-66.47c-.048,0,.06.0079-.048,0"
