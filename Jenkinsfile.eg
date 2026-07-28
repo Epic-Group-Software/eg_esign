@@ -105,9 +105,19 @@ pipeline {
             }
         }
 
+        // Lint, tests, typecheck and helm lint gate the PR, not the merge — by
+        // the time a commit reaches staging/main they have already passed on
+        // exactly that change, and re-running them delayed every deploy by
+        // ~12 minutes. Security Scan still runs on push, because a secret can
+        // reach a branch without ever going through a PR. Matches the
+        // Project-Operations split.
         stage('Checks') {
             parallel {
                 stage('Quality') {
+                    when {
+                        changeRequest()
+                        beforeAgent true
+                    }
                     agent { kubernetes { yaml podNode() } }
                     steps {
                         unstash 'source'
@@ -134,6 +144,10 @@ pipeline {
                 }
 
                 stage('Helm Lint') {
+                    when {
+                        changeRequest()
+                        beforeAgent true
+                    }
                     agent { kubernetes { yaml podKubectl() } }
                     options { timeout(time: 5, unit: 'MINUTES') }
                     steps {
@@ -276,6 +290,9 @@ spec:
 
 def podKaniko() {
     // trivy rides along to scan the pushed image without a second pod.
+    // 14Gi: the image build runs tsc with an 8Gi heap (see docker/Dockerfile),
+    // and kaniko needs headroom on top for its layer snapshots — at 8Gi the
+    // build was OOM-killed at exit 134. Requests stay low so it still schedules.
     return '''
 apiVersion: v1
 kind: Pod
@@ -295,7 +312,7 @@ spec:
         memory: "4Gi"
         cpu: "400m"
       limits:
-        memory: "8Gi"
+        memory: "14Gi"
         cpu: "3000m"
   - name: trivy
     image: aquasec/trivy:0.72.0
