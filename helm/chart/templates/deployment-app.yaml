@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "app.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "app.componentLabels" (dict "component" "app" "context" .) | nindent 4 }}
+spec:
+  replicas: {{ .Values.app.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      {{- include "app.componentSelectorLabels" (dict "component" "app" "context" .) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "app.componentSelectorLabels" (dict "component" "app" "context" .) | nindent 8 }}
+      annotations:
+        # Roll the pods when config or secrets change, not just on image bumps.
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+    spec:
+      terminationGracePeriodSeconds: 30
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.app.securityContext | nindent 8 }}
+        fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        # docker/start.sh runs `prisma migrate deploy` on boot, so there is
+        # deliberately no migration init container here.
+        - name: create-bucket
+          image: "{{ .Values.image.mc.repository }}:{{ .Values.image.mc.tag }}"
+          env:
+            - name: MC_CONFIG_DIR
+              value: /tmp/.mc
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "app.fullname" . }}-secret
+                  key: MINIO_ROOT_PASSWORD
+          command:
+            - sh
+            - -c
+            - |
+              for i in $(seq 1 60); do
+                if mc alias set myminio http://{{ include "app.fullname" . }}-minio:{{ .Values.service.minio.apiPort }} {{ .Values.minio.auth.rootUser }} "$MINIO_ROOT_PASSWORD"; then
+                  mc mb myminio/{{ .Values.minio.bucket }} --ignore-existing
+                  exit 0
+                fi
+                echo "MinIO not ready, retrying in 5s ($i/60)"
+                sleep 5
+              done
+              echo "Failed to reach MinIO"
+              exit 1
+      containers:
+        - name: app
+          image: "{{ .Values.image.app.repository }}:{{ .Values.tag }}"
+          imagePullPolicy: {{ .Values.image.app.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.app.port }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "app.fullname" . }}-config
+            - secretRef:
+                name: {{ include "app.fullname" . }}-secret
+          volumeMounts:
+            {{- if .Values.certificate.p12Base64 }}
+            - name: certificate
+              mountPath: {{ dir .Values.signing.path }}
+              readOnly: true
+            {{- end }}
+          resources:
+            {{- toYaml .Values.app.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: localhost
+            initialDelaySeconds: 90
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: localhost
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        {{- if .Values.certificate.p12Base64 }}
+        - name: certificate
+          secret:
+            secretName: {{ include "app.fullname" . }}-certificate
+            # 0440 not 0400: secret files are owned root:fsGroup, so owner-only
+            # leaves the process (uid 1001) unable to read its own cert.
+            defaultMode: 0440
+            items:
+              - key: cert.p12
+                path: {{ base .Values.signing.path }}
+        {{- end }}

@@ -1,26 +1,20 @@
-# Staging-only mail sink. Staging must never authenticate against the
-# production SendGrid account — a test document would email real signers — so
-# it delivers here instead. SpamAssassin rides along as a sidecar (same shape
-# as Project-Operations) so rendered mail can be scored for spamminess.
-#
-# Deliberately ClusterIP with no ingress: captured mail is real document
-# content and should not be publicly reachable. To read it:
-#   kubectl -n eg-esign-staging port-forward svc/mailpit 8025:8025
+{{- if .Values.mailpit.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mailpit
+  name: {{ include "app.fullname" . }}-mailpit
+  namespace: {{ .Values.namespace }}
   labels:
-    app: mailpit
+    {{- include "app.componentLabels" (dict "component" "mailpit" "context" .) | nindent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mailpit
+      {{- include "app.componentSelectorLabels" (dict "component" "mailpit" "context" .) | nindent 6 }}
   template:
     metadata:
       labels:
-        app: mailpit
+        {{- include "app.componentSelectorLabels" (dict "component" "mailpit" "context" .) | nindent 8 }}
     spec:
       containers:
         - name: mailpit
@@ -30,8 +24,7 @@ spec:
               value: /data/mailpit.db
             - name: MP_MAX_MESSAGES
               value: "5000"
-            # Accept whatever credentials the app presents — the staging SMTP
-            # password is a placeholder, not a real secret.
+            # The staging SMTP password is a placeholder, not a real secret.
             - name: MP_SMTP_AUTH_ACCEPT_ANY
               value: "1"
             - name: MP_SMTP_AUTH_ALLOW_INSECURE
@@ -40,9 +33,9 @@ spec:
               value: "localhost:783"
           ports:
             - name: http
-              containerPort: 8025
+              containerPort: {{ .Values.service.mailpit.httpPort }}
             - name: smtp
-              containerPort: 1025
+              containerPort: {{ .Values.service.mailpit.smtpPort }}
           livenessProbe:
             httpGet:
               path: /livez
@@ -59,12 +52,7 @@ spec:
             - name: data
               mountPath: /data
           resources:
-            requests:
-              memory: "64Mi"
-              cpu: "10m"
-            limits:
-              memory: "256Mi"
-              cpu: "250m"
+            {{- toYaml .Values.mailpit.resources | nindent 12 }}
         - name: spamassassin
           image: axllent/spamassassin:latest
           ports:
@@ -76,31 +64,28 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 30
           resources:
-            requests:
-              memory: "64Mi"
-              cpu: "10m"
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
+            {{- toYaml .Values.mailpit.spamassassin.resources | nindent 12 }}
       volumes:
-        # Captured staging mail is disposable; no PVC needed.
+        # Captured staging mail is disposable.
         - name: data
           emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: mailpit
+  name: {{ include "app.fullname" . }}-mailpit
+  namespace: {{ .Values.namespace }}
   labels:
-    app: mailpit
+    {{- include "app.componentLabels" (dict "component" "mailpit" "context" .) | nindent 4 }}
 spec:
+  type: {{ .Values.service.mailpit.type }}
   selector:
-    app: mailpit
+    {{- include "app.componentSelectorLabels" (dict "component" "mailpit" "context" .) | nindent 4 }}
   ports:
-    - port: 8025
-      targetPort: 8025
-      name: http
-    - port: 1025
-      targetPort: 1025
-      name: smtp
-  type: ClusterIP
+    - name: http
+      port: {{ .Values.service.mailpit.httpPort }}
+      targetPort: http
+    - name: smtp
+      port: {{ .Values.service.mailpit.smtpPort }}
+      targetPort: smtp
+{{- end }}

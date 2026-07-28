@@ -88,7 +88,7 @@ pipeline {
                     // in the shared Quality pod stay invisible until the
                     // earlier ones finish.
                     if (env.CHANGE_ID) {
-                        ['Lint', 'Unit Tests', 'Build & Typecheck', 'Security Scan'].each {
+                        ['Lint', 'Unit Tests', 'Build & Typecheck', 'Security Scan', 'Helm Lint'].each {
                             helpers.notifyGitHub(it, 'pending', 'Queued')
                         }
                     }
@@ -128,6 +128,21 @@ pipeline {
                             helpers.withGitHubStatus('Security Scan') {
                                 def securityScan = load 'jenkins/security-scan.groovy'
                                 securityScan()
+                            }
+                        }
+                    }
+                }
+
+                stage('Helm Lint') {
+                    agent { kubernetes { yaml podKubectl() } }
+                    options { timeout(time: 5, unit: 'MINUTES') }
+                    steps {
+                        unstash 'source'
+                        script {
+                            def helpers = load 'jenkins/helpers.groovy'
+                            helpers.withGitHubStatus('Helm Lint') {
+                                def helmLint = load 'jenkins/helm-lint.groovy'
+                                helmLint()
                             }
                         }
                     }
@@ -296,7 +311,7 @@ spec:
 }
 
 def podKubectl() {
-    // alpine/k8s bundles kubectl and kustomize.
+    // alpine/k8s bundles kubectl and helm.
     return '''
 apiVersion: v1
 kind: Pod

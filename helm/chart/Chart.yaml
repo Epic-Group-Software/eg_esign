@@ -1,0 +1,6 @@
+apiVersion: v2
+name: eg-esign
+description: Epic Group e-Sign — dedicated Documenso instance
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

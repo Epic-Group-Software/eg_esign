@@ -1,10 +1,13 @@
-// Deploy eg-esign to eg-k8s-01 (Epic Group AKS).
+// Deploy eg-esign to eg-k8s-01 (Epic Group AKS) via Helm.
 //
 // Kubeconfig is epic-fleet-kubeconfig — the same credential Project-Operations
 // uses for this cluster. App secrets come from job-scoped credentials suffixed
 // -staging / -prod (env.CRED).
 
 def call() {
+    def release = "eg-esign"
+    def valuesFile = (env.ENVN == 'prod') ? 'values-production.yaml' : 'values-staging.yaml'
+
     withCredentials([
         file(credentialsId: 'epic-fleet-kubeconfig', variable: 'KUBECONFIG_FILE'),
         string(credentialsId: 'REGISTRY_TOKEN', variable: 'REGISTRY_TOKEN'),
@@ -13,12 +16,7 @@ def call() {
         string(credentialsId: "eg-esign-encryption-key-2${env.CRED}", variable: 'ENCRYPTION_KEY_2'),
         string(credentialsId: "eg-esign-postgres-password${env.CRED}", variable: 'POSTGRES_PASSWORD'),
         string(credentialsId: "eg-esign-minio-password${env.CRED}", variable: 'MINIO_PASSWORD'),
-        // Per-environment on purpose. Sharing one SendGrid key would let
-        // staging send real mail to real signers — for an e-signature app a
-        // test document could reach actual recipients. Staging's credential is
-        // a placeholder until it gets its own SendGrid subuser or a mail sink;
-        // bad SMTP auth fails at send time, not at boot, so it does not block
-        // the deploy or the health check.
+        // Per-environment: a shared SendGrid key would let staging email real signers.
         string(credentialsId: "eg-esign-smtp-password${env.CRED}", variable: 'SMTP_PASSWORD'),
         string(credentialsId: "eg-esign-cert-passphrase${env.CRED}", variable: 'CERT_PASSPHRASE'),
         file(credentialsId: "eg-esign-certificate-p12${env.CRED}", variable: 'CERT_FILE'),
@@ -26,63 +24,57 @@ def call() {
         string(credentialsId: "eg-esign-oidc-client-secret${env.CRED}", variable: 'OIDC_CLIENT_SECRET'),
     ]) {
         container('kubectl') {
-            sh '''#!/bin/bash
+            sh """#!/bin/bash
                 set -euo pipefail
-                export KUBECONFIG="${KUBECONFIG_FILE}"
+                export KUBECONFIG="\${KUBECONFIG_FILE}"
 
-                echo "Deploying eg-esign to ${ENVN} (ns ${NAMESPACE}, image ${IMAGE_TAG})"
+                echo "Deploying eg-esign to \${ENVN} (ns \${NAMESPACE}, image \${IMAGE_TAG})"
                 kubectl cluster-info
-                kubectl create namespace "${NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
+                kubectl create namespace "\${NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
 
-                # The deployment declares imagePullSecrets: acr-pull-secret.
+                # The chart references imagePullSecrets: acr-pull-secret, which
+                # Helm does not own.
                 kubectl create secret docker-registry acr-pull-secret \
-                    --namespace="${NAMESPACE}" \
-                    --docker-server="${REGISTRY}" \
-                    --docker-username="${REGISTRY_USERNAME}" \
-                    --docker-password="${REGISTRY_TOKEN}" \
+                    --namespace="\${NAMESPACE}" \
+                    --docker-server="\${REGISTRY}" \
+                    --docker-username="\${REGISTRY_USERNAME}" \
+                    --docker-password="\${REGISTRY_TOKEN}" \
                     --dry-run=client -o yaml | kubectl apply -f -
 
-                kubectl create secret generic eg-esign-secrets \
-                    --namespace="${NAMESPACE}" \
-                    --from-literal=NEXTAUTH_SECRET="${NEXTAUTH_SECRET}" \
-                    --from-literal=NEXT_PRIVATE_ENCRYPTION_KEY="${ENCRYPTION_KEY}" \
-                    --from-literal=NEXT_PRIVATE_ENCRYPTION_SECONDARY_KEY="${ENCRYPTION_KEY_2}" \
-                    --from-literal=POSTGRES_PASSWORD="${POSTGRES_PASSWORD}" \
-                    --from-literal=MINIO_ROOT_PASSWORD="${MINIO_PASSWORD}" \
-                    --from-literal=NEXT_PRIVATE_UPLOAD_SECRET_ACCESS_KEY="${MINIO_PASSWORD}" \
-                    --from-literal=NEXT_PRIVATE_SMTP_PASSWORD="${SMTP_PASSWORD}" \
-                    --from-literal=NEXT_PRIVATE_SIGNING_PASSPHRASE="${CERT_PASSPHRASE}" \
-                    --from-literal=NEXT_PRIVATE_OIDC_CLIENT_ID="${OIDC_CLIENT_ID}" \
-                    --from-literal=NEXT_PRIVATE_OIDC_CLIENT_SECRET="${OIDC_CLIENT_SECRET}" \
-                    --dry-run=client -o yaml | kubectl apply -f -
+                # Binary secret; base64 here rather than --set-file, which would
+                # mangle the .p12.
+                CERT_B64=\$(base64 -w0 "\${CERT_FILE}")
 
-                kubectl create secret generic eg-esign-certificate \
-                    --namespace="${NAMESPACE}" \
-                    --from-file=cert.p12="${CERT_FILE}" \
-                    --dry-run=client -o yaml | kubectl apply -f -
+                # --history-max 5: `--set` puts these secrets in the release
+                # history, so old revisions retain rotated credentials.
+                helm upgrade --install ${release} helm/chart \
+                    --namespace "\${NAMESPACE}" \
+                    --create-namespace \
+                    -f helm/chart/values.yaml \
+                    -f helm/chart/${valuesFile} \
+                    --set namespace="\${NAMESPACE}" \
+                    --set tag="\${IMAGE_TAG}" \
+                    --set image.app.repository="\${REGISTRY}/\${IMAGE_NAME}" \
+                    --set-string secrets.nextauthSecret="\${NEXTAUTH_SECRET}" \
+                    --set-string secrets.encryptionKey="\${ENCRYPTION_KEY}" \
+                    --set-string secrets.encryptionSecondaryKey="\${ENCRYPTION_KEY_2}" \
+                    --set-string secrets.smtpPassword="\${SMTP_PASSWORD}" \
+                    --set-string secrets.signingPassphrase="\${CERT_PASSPHRASE}" \
+                    --set-string secrets.oidcClientId="\${OIDC_CLIENT_ID}" \
+                    --set-string secrets.oidcClientSecret="\${OIDC_CLIENT_SECRET}" \
+                    --set-string postgres.auth.password="\${POSTGRES_PASSWORD}" \
+                    --set-string minio.auth.rootPassword="\${MINIO_PASSWORD}" \
+                    --set-string certificate.p12Base64="\${CERT_B64}" \
+                    --history-max 5 \
+                    --wait \
+                    --timeout 15m
+            """
 
-                # kustomize, not `kubectl set image` — set image patches only
-                # the named container, leaving any other on a moving tag.
-                cd "k8s/eg-esign/overlays/${ENVN}"
-                kustomize edit set image \
-                    "${REGISTRY}/${IMAGE_NAME}=${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
-                cd - >/dev/null
-
-                kubectl apply -k "k8s/eg-esign/overlays/${ENVN}"
-
-                # Soft-fail: first deploy waits on PVC provisioning and image
-                # pulls. The app rollout below is the real gate.
-                kubectl -n "${NAMESPACE}" rollout status statefulset/eg-esign-postgres --timeout=5m || true
-                kubectl -n "${NAMESPACE}" rollout status statefulset/minio --timeout=3m || true
-
-                kubectl -n "${NAMESPACE}" rollout status deployment/eg-esign --timeout=10m
-            '''
-
-            // /api/health returns {"status":<overall>,...,"checks":{...}}. The
-            // pattern is anchored at position 0 so a nested checks.*.status
-            // can't satisfy it — a bare `grep ok` would pass a top-level
-            // "error" body. "warning" is accepted to match the readinessProbe
-            // (any 2xx); only top-level "error" fails the deploy.
+            // Health gate. /api/health puts "status" first in the body, so the
+            // pattern is anchored at position 0 — a bare `grep ok` would pass a
+            // top-level "error" whose nested checks.certificate still reads ok.
+            // "warning" is accepted to match the readinessProbe (any 2xx); only
+            // a top-level "error" (HTTP 500) fails the deploy.
             sh '''#!/bin/bash
                 set -uo pipefail
                 export KUBECONFIG="${KUBECONFIG_FILE}"
@@ -101,8 +93,7 @@ def call() {
                 done
 
                 echo "Health check failed - rolling back"
-                kubectl rollout undo deployment/eg-esign -n "${NAMESPACE}"
-                kubectl rollout status deployment/eg-esign -n "${NAMESPACE}" --timeout=5m || true
+                helm rollback eg-esign 0 -n "${NAMESPACE}" --wait --timeout 10m || true
                 exit 1
             '''
         }

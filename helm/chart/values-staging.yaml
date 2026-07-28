@@ -1,0 +1,21 @@
+# Staging overlay — applied on top of values.yaml (see jenkins/deploy.groovy).
+namespace: eg-esign-staging
+fqdn: esign-staging.epicgroup.ca
+tag: staging
+
+ingress:
+  tls:
+    secretName: eg-esign-staging-tls
+
+# Mail is captured in-cluster. Staging must never authenticate against the
+# production SendGrid account — a test document would reach real signers.
+mailpit:
+  enabled: true
+
+smtp:
+  host: eg-esign-mailpit
+  port: 1025
+  secure: false
+  username: staging
+  fromName: Epic Group e-Sign (staging)
+  fromAddress: noreply-staging@epicgroup.ca

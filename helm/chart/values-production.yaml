@@ -1,0 +1,29 @@
+# Production overlay — applied on top of values.yaml (see jenkins/deploy.groovy).
+namespace: eg-esign-prod
+fqdn: esign.epicgroup.ca
+tag: prod
+
+ingress:
+  tls:
+    secretName: eg-esign-prod-tls
+
+# No mail sink in production — real delivery via SendGrid.
+mailpit:
+  enabled: false
+
+smtp:
+  transport: smtp-auth
+  host: smtp.sendgrid.net
+  port: 587
+  username: apikey
+  secure: false
+  fromName: Epic Group e-Sign
+  fromAddress: noreply@epicgroup.ca
+
+postgres:
+  persistence:
+    size: 20Gi
+
+minio:
+  persistence:
+    size: 100Gi
