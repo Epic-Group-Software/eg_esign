@@ -21,6 +21,13 @@ image:
 imagePullSecrets:
   - name: acr-pull-secret
 
+# Staging uses the cluster `default` class (reclaimPolicy: Delete) — its data is
+# disposable. Production creates its own Retain class; see values-production.yaml.
+persistence:
+  createStorageClass: false
+  storageClassName: default
+  skuName: Premium_LRS
+
 app:
   replicaCount: 1
   # tsc-free at runtime, but PDF rendering is memory-hungry.
@@ -46,7 +53,6 @@ postgres:
   sslMode: disable
   persistence:
     size: 10Gi
-    storageClass: default
   resources:
     requests:
       cpu: 250m
@@ -62,7 +68,6 @@ minio:
   bucket: eg-esign
   persistence:
     size: 50Gi
-    storageClass: default
   resources:
     requests:
       cpu: 25m

@@ -59,7 +59,7 @@ spec:
         name: data
       spec:
         accessModes: ["ReadWriteOnce"]
-        storageClassName: {{ .Values.minio.persistence.storageClass }}
+        storageClassName: {{ .Values.persistence.storageClassName }}
         resources:
           requests:
             storage: {{ .Values.minio.persistence.size }}

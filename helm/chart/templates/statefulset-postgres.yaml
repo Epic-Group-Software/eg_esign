@@ -58,7 +58,7 @@ spec:
         name: data
       spec:
         accessModes: ["ReadWriteOnce"]
-        storageClassName: {{ .Values.postgres.persistence.storageClass }}
+        storageClassName: {{ .Values.persistence.storageClassName }}
         resources:
           requests:
             storage: {{ .Values.postgres.persistence.size }}

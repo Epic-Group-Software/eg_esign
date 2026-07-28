@@ -1,0 +1,23 @@
+{{- if .Values.persistence.createStorageClass }}
+# Retain-reclaim disk class for production. The cluster `default` class is
+# reclaimPolicy: Delete, so deleting a PVC destroys the underlying Azure disk —
+# unacceptable for the signed-document store and the audit-trail database.
+# With Retain, a deleted PVC orphans the disk instead, which is recoverable.
+#
+# Mirrors the erec-project-ops-production-media precedent, but uses the disk CSI
+# driver rather than file: postgres and minio are ReadWriteOnce block volumes.
+#
+# StorageClasses are cluster-scoped, so this is named per environment.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ .Values.persistence.storageClassName }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+provisioner: disk.csi.azure.com
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  skuName: {{ .Values.persistence.skuName }}
+{{- end }}
