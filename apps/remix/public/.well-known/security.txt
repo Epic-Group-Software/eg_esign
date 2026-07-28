@@ -1,14 +1,14 @@
 # Report security vulnerabilities privately via GitHub Security Advisories (preferred).
-Contact: https://github.com/documenso/documenso/security/advisories/new
+Contact: https://github.com/Epic-Group-Software/eg_esign/security/advisories/new
 
 # Alternatively, report critical issues privately by email.
-Contact: mailto:security@davincisolutions.ai
+Contact: mailto:security@epicgroup.ca
 
 # Security policy
-Policy: https://github.com/documenso/documenso/security/policy
+Policy: https://github.com/Epic-Group-Software/eg_esign/security/policy
 
 # General (non-security) issues
-Contact: https://github.com/documenso/documenso/issues/new?assignees=&labels=bug&projects=&template=bug-report.yml
+Contact: https://github.com/Epic-Group-Software/eg_esign/issues/new?assignees=&labels=bug&projects=&template=bug-report.yml
 
 Preferred-Languages: en
-Canonical: https://davincisolutions.ai/.well-known/security.txt
+Canonical: https://esign.epicgroup.ca/.well-known/security.txt

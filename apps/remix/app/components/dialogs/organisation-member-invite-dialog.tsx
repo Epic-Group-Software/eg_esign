@@ -233,9 +233,9 @@ export const OrganisationMemberInviteDialog = ({ trigger, ...props }: Organisati
 
   const downloadTemplate = () => {
     const data = [
-      { email: 'admin@davincisolutions.ai', role: 'Admin' },
-      { email: 'manager@davincisolutions.ai', role: 'Manager' },
-      { email: 'member@davincisolutions.ai', role: 'Member' },
+      { email: 'admin@epicgroup.ca', role: 'Admin' },
+      { email: 'manager@epicgroup.ca', role: 'Manager' },
+      { email: 'member@epicgroup.ca', role: 'Member' },
     ];
 
     const csvContent = 'Email address,Role\n' + data.map((row) => `${row.email},${row.role}`).join('\n');
@@ -245,7 +245,7 @@ export const OrganisationMemberInviteDialog = ({ trigger, ...props }: Organisati
     });
 
     downloadFile({
-      filename: 'davinci-sign-organisation-member-invites-template.csv',
+      filename: 'epic-sign-organisation-member-invites-template.csv',
       data: blob,
     });
   };

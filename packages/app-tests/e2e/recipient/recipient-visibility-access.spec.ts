@@ -34,7 +34,7 @@ test('[RECIPIENT]: a member cannot read a recipient of a restricted document', a
 
   const { token: memberToken } = await seedApiTokenForUser({ userId: member.id, teamId: team.id });
 
-  const document = await seedCompletedDocument(owner, team.id, ['recipient@test.davincisolutions.ai'], {
+  const document = await seedCompletedDocument(owner, team.id, ['recipient@test.epicgroup.ca'], {
     createDocumentOptions: { visibility: DocumentVisibility.ADMIN },
   });
 
@@ -56,7 +56,7 @@ test('[RECIPIENT]: a member cannot read a field of a restricted document', async
 
   const { token: memberToken } = await seedApiTokenForUser({ userId: member.id, teamId: team.id });
 
-  const document = await seedCompletedDocument(owner, team.id, ['recipient@test.davincisolutions.ai'], {
+  const document = await seedCompletedDocument(owner, team.id, ['recipient@test.epicgroup.ca'], {
     createDocumentOptions: { visibility: DocumentVisibility.ADMIN },
   });
 

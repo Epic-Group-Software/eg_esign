@@ -90,7 +90,7 @@ export default function ApiTokensPage() {
             Create and manage API tokens. See our{' '}
             <a
               className="text-primary underline"
-              href={'https://docs.davincisolutions.ai/developers/public-api'}
+              href={'https://docs.epicgroup.ca/developers/public-api'}
               target="_blank"
               rel="noopener"
             >

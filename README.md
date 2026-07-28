@@ -1,21 +1,21 @@
-# Davinci Sign
+# Epic Sign
 
-Professional electronic signature solution by Davinci AI Solutions.
+Electronic signature platform for Epic Group.
 
-> **Note:** This project is based on [Davinci Sign](https://github.com/documenso/documenso), an open-source document signing platform. We extend our gratitude to the Davinci Sign team for their excellent work.
+> **Note:** This project is based on [Documenso](https://github.com/documenso/documenso), an open-source document signing platform. We extend our gratitude to the Documenso team for their excellent work.
 
 <p align="center" style="margin-top: 20px">
   <p align="center">
   The Open Source DocuSign Alternative.
   <br>
-    <a href="https://davincisolutions.ai"><strong>Learn more »</strong></a>
+    <a href="https://epicgroup.ca"><strong>Learn more »</strong></a>
     <br />
     <br />
     <a href="https://documen.so/discord">Discord</a>
     ·
-    <a href="https://davincisolutions.ai">Website</a>
+    <a href="https://epicgroup.ca">Website</a>
     ·
-    <a href="https://docs.davincisolutions.ai">Documentation</a>
+    <a href="https://docs.epicgroup.ca">Documentation</a>
     ·
     <a href="https://github.com/documenso/documenso/issues">Issues</a>
     ·
@@ -62,9 +62,9 @@ PRs run **Lint** (biome, changed files only), **Unit Tests** (vitest), **Build &
 - **Onboarding a partner tenant takes two steps**: admin-consent + assign them in the `Epic Group e-Sign` enterprise app, *and* add their domain to `config.allowedSignupDomains`. Miss the second and their users authenticate but get no account.
 - **Prod is not yet provisioned** — only the OIDC credentials exist with a `-prod` suffix; the rest (`eg-esign-*-prod`) and a real signing certificate are still required before merging to `main`.
 
-## About Davinci Sign
+## About Epic Sign
 
-Davinci Sign provides a fast, secure, and easy document signing experience for businesses. Built on the robust Davinci Sign platform, it offers:
+Epic Sign provides a fast, secure, and easy document signing experience for businesses. Built on the robust Epic Sign platform, it offers:
 
 - Secure electronic signatures
 - Self-hosting capability
@@ -73,22 +73,22 @@ Davinci Sign provides a fast, secure, and easy document signing experience for b
 
 ## Community and Next Steps 🎯
 
-- Try Davinci Sign by self-hosting it or visiting [davincisolutions.ai](https://davincisolutions.ai).
-- Tell us what you think in the [Davinci Sign Discussions](https://github.com/documenso/documenso/discussions).
+- Try Epic Sign by self-hosting it or visiting [epicgroup.ca](https://epicgroup.ca).
+- Tell us what you think in the [Documenso Discussions](https://github.com/documenso/documenso/discussions).
 - Join the [Discord server](https://documen.so/discord) for any questions and getting to know other community members.
 - ⭐ the repository to help us raise awareness.
 - Open detailed [issues](https://github.com/documenso/documenso/issues) to report bugs or propose features.
 
 ## Contributing
 
-> **Note**: We no longer accept external pull requests, aside from a small group of trusted contributors we reach out to directly. The best way to contribute is through detailed issues. Read [Why We're Pausing External Pull Requests](https://davincisolutions.ai/blog/why-we-re-pausing-external-pull-requests) for the reasoning.
+> **Note**: We no longer accept external pull requests, aside from a small group of trusted contributors we reach out to directly. The best way to contribute is through detailed issues. Read [Why We're Pausing External Pull Requests](https://epicgroup.ca/blog/why-we-re-pausing-external-pull-requests) for the reasoning.
 
-- Davinci Sign stays open source. You can read, audit, run, and fork the code.
+- Epic Sign stays open source. You can read, audit, run, and fork the code.
 - To report issues or propose changes, see our [contribution guide](https://github.com/documenso/documenso/blob/main/CONTRIBUTING.md).
 
 ## Contact us
 
-Contact us if you are interested in our Enterprise plan for large organizations that need extra flexibility and control at [support@davincisolutions.ai](mailto:support@davincisolutions.ai).
+Contact us if you are interested in our Enterprise plan for large organizations that need extra flexibility and control at [support@epicgroup.ca](mailto:support@epicgroup.ca).
 
 ## Tech Stack
 
@@ -116,7 +116,7 @@ Contact us if you are interested in our Enterprise plan for large organizations 
 
 ### Requirements
 
-To run Davinci Sign locally, you will need
+To run Epic Sign locally, you will need
 
 - Node.js (v22 or above)
 - Postgres SQL Database
@@ -144,7 +144,7 @@ git clone https://github.com/<your-username>/documenso
 
 ### Manual Setup
 
-Follow these steps to setup Davinci Sign on your local machine, or refer to the [manual setup guide](https://docs.davincisolutions.ai/docs/developers/local-development/manual) for more details:
+Follow these steps to setup Epic Sign on your local machine, or refer to the [manual setup guide](https://docs.epicgroup.ca/docs/developers/local-development/manual) for more details:
 
 1. [Fork this repository](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/about-forks) to your GitHub account.
 
@@ -188,9 +188,9 @@ git clone https://github.com/<your-username>/documenso
 
 ## Docker
 
-Docker containers are available for running Davinci Sign. We support official Docker images for Davinci Sign on [DockerHub](https://hub.docker.com/r/davinci/davinci-sign) and [GitHub Container Registry](https://ghcr.io/davinci/davinci-sign).
+Docker containers are available for running Epic Sign. We support official Docker images for Documenso on [DockerHub](https://hub.docker.com/r/davinci/davinci-sign) and [GitHub Container Registry](https://ghcr.io/davinci/davinci-sign).
 
-For setup instructions, see the [Docker Deployment](https://docs.davincisolutions.ai/docs/self-hosting/deployment/docker) and [Docker Compose](https://docs.davincisolutions.ai/docs/self-hosting/deployment/docker-compose) guides.
+For setup instructions, see the [Docker Deployment](https://docs.epicgroup.ca/docs/self-hosting/deployment/docker) and [Docker Compose](https://docs.epicgroup.ca/docs/self-hosting/deployment/docker-compose) guides.
 
 ### Support IPv6
 

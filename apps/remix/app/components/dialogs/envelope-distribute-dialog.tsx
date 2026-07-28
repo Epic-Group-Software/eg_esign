@@ -351,7 +351,7 @@ export const EnvelopeDistributeDialog = ({
                                             </SelectItem>
                                           ))}
 
-                                          <SelectItem value={'-1'}>Davinci Sign</SelectItem>
+                                          <SelectItem value={'-1'}>Epic Sign</SelectItem>
                                         </SelectContent>
                                       </Select>
                                     </FormControl>

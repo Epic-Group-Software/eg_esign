@@ -1,18 +1,18 @@
 ---
 title: Environment Variables
-description: Complete reference for all environment variables used to configure a self-hosted Davinci Sign instance.
+description: Complete reference for all environment variables used to configure a self-hosted Epic Sign instance.
 ---
 
 ## Required Variables
 
-These variables must be set for Davinci Sign to function:
+These variables must be set for Epic Sign to function:
 
 | Variable                                | Description                                                                                |
 | --------------------------------------- | ------------------------------------------------------------------------------------------ |
 | `NEXTAUTH_SECRET`                       | Secret key for NextAuth.js encryption and signing. Generate with `openssl rand -base64 32` |
 | `NEXT_PRIVATE_ENCRYPTION_KEY`           | Primary encryption key for symmetric encryption (minimum 32 characters)                    |
 | `NEXT_PRIVATE_ENCRYPTION_SECONDARY_KEY` | Secondary encryption key for key rotation (minimum 32 characters)                          |
-| `NEXT_PUBLIC_WEBAPP_URL`                | Public URL of your Davinci Sign instance (e.g., `https://sign.example.com`)                |
+| `NEXT_PUBLIC_WEBAPP_URL`                | Public URL of your Epic Sign instance (e.g., `https://sign.example.com`)                |
 | `NEXT_PRIVATE_DATABASE_URL`             | PostgreSQL connection URL with connection pooling                                          |
 | `NEXT_PRIVATE_SMTP_FROM_ADDRESS`        | Email address used as the sender for all outgoing emails                                   |
 | `NEXT_PRIVATE_SMTP_FROM_NAME`           | Display name for the sender of outgoing emails                                             |
@@ -30,7 +30,7 @@ These variables must be set for Davinci Sign to function:
 
 ## Database Configuration
 
-Davinci Sign requires PostgreSQL 14 or higher.
+Epic Sign requires PostgreSQL 14 or higher.
 
 | Variable                           | Required     | Description                                                                                |
 | ---------------------------------- | ------------ | ------------------------------------------------------------------------------------------ |
@@ -92,7 +92,7 @@ Callback URL: `https://<your-domain>/api/auth/callback/microsoft`
 | --------------------------------------- | ------- | ------------------------------------------------------------------------ |
 | `NEXT_PRIVATE_WEBHOOK_SSRF_BYPASS_HOSTS` | -       | Comma-separated hostnames or IPs allowed to resolve to private addresses |
 
-Before delivering a webhook, Davinci Sign checks whether the target resolves to a
+Before delivering a webhook, Epic Sign checks whether the target resolves to a
 private or loopback address and blocks it if so. This check is best-effort and
 fails open. Use `NEXT_PRIVATE_WEBHOOK_SSRF_BYPASS_HOSTS` to allow specific
 internal hosts.
@@ -128,8 +128,8 @@ NEXT_PRIVATE_ENCRYPTION_SECONDARY_KEY="your-secondary-key-at-least-32-chars"
 NEXT_PUBLIC_WEBAPP_URL="https://sign.example.com"
 
 # Database
-NEXT_PRIVATE_DATABASE_URL="postgres://user:password@localhost:5432/davinci-sign"
-NEXT_PRIVATE_DIRECT_DATABASE_URL="postgres://user:password@localhost:5432/davinci-sign"
+NEXT_PRIVATE_DATABASE_URL="postgres://user:password@localhost:5432/eg_esign"
+NEXT_PRIVATE_DIRECT_DATABASE_URL="postgres://user:password@localhost:5432/eg_esign"
 
 # Email
 NEXT_PRIVATE_SMTP_TRANSPORT="smtp-auth"
@@ -137,7 +137,7 @@ NEXT_PRIVATE_SMTP_HOST="smtp.example.com"
 NEXT_PRIVATE_SMTP_PORT=587
 NEXT_PRIVATE_SMTP_USERNAME="your-smtp-user"
 NEXT_PRIVATE_SMTP_PASSWORD="your-smtp-password"
-NEXT_PRIVATE_SMTP_FROM_NAME="Davinci Sign"
+NEXT_PRIVATE_SMTP_FROM_NAME="Epic Sign"
 NEXT_PRIVATE_SMTP_FROM_ADDRESS="noreply@example.com"
 
 # Signing (certificate must be configured)

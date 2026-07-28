@@ -1,17 +1,15 @@
-import { useEffect, useState } from 'react';
-
-import { msg } from '@lingui/core/macro';
-import { useLingui } from '@lingui/react';
-import { Trans } from '@lingui/react/macro';
-import { AlertTriangle, CheckCircle2, Loader, XCircle } from 'lucide-react';
-import { Link, redirect, useNavigate } from 'react-router';
-import { match } from 'ts-pattern';
-
 import { authClient } from '@documenso/auth/client';
 import { useOptionalSession } from '@documenso/lib/client-only/providers/session';
 import { EMAIL_VERIFICATION_STATE } from '@documenso/lib/constants/email';
 import { Button } from '@documenso/ui/primitives/button';
 import { useToast } from '@documenso/ui/primitives/use-toast';
+import { msg } from '@lingui/core/macro';
+import { useLingui } from '@lingui/react';
+import { Trans } from '@lingui/react/macro';
+import { AlertTriangle, CheckCircle2, Loader, XCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, redirect, useNavigate } from 'react-router';
+import { match } from 'ts-pattern';
 
 import type { Route } from './+types/verify-email.$token';
 
@@ -90,8 +88,7 @@ export default function VerifyEmailPage({ loaderData }: Route.ComponentProps) {
 
             <p className="mt-4 text-muted-foreground">
               <Trans>
-                We were unable to verify your email. If your email is not verified already, please
-                try again.
+                We were unable to verify your email. If your email is not verified already, please try again.
               </Trans>
             </p>
 
@@ -118,8 +115,8 @@ export default function VerifyEmailPage({ loaderData }: Route.ComponentProps) {
 
             <p className="mt-4 text-muted-foreground">
               <Trans>
-                It seems that the provided token has expired. We\'ve just sent you another token,
-                please check your email and try again.
+                It seems that the provided token has expired. We\'ve just sent you another token, please check your
+                email and try again.
               </Trans>
             </p>
 
@@ -145,10 +142,7 @@ export default function VerifyEmailPage({ loaderData }: Route.ComponentProps) {
             </h2>
 
             <p className="mt-4 text-muted-foreground">
-              <Trans>
-                Your email has been successfully confirmed! You can now use all features of Davinci
-                Sign.
-              </Trans>
+              <Trans>Your email has been successfully confirmed! You can now use all features of Epic Sign.</Trans>
             </p>
 
             <Button className="mt-4" asChild>
@@ -173,9 +167,7 @@ export default function VerifyEmailPage({ loaderData }: Route.ComponentProps) {
             </h2>
 
             <p className="mt-4 text-muted-foreground">
-              <Trans>
-                Your email has already been confirmed. You can now use all features of Davinci Sign.
-              </Trans>
+              <Trans>Your email has already been confirmed. You can now use all features of Epic Sign.</Trans>
             </p>
 
             <Button className="mt-4" asChild>

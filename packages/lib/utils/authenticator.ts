@@ -9,7 +9,7 @@ export const getAuthenticatorOptions = () => {
   const rpId = webAppBaseUrl.hostname;
 
   return {
-    rpName: 'Davinci Sign',
+    rpName: 'Epic Sign',
     rpId,
     origin: NEXT_PUBLIC_WEBAPP_URL(),
     timeout: PASSKEY_TIMEOUT,

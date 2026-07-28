@@ -65,7 +65,7 @@ export const AdminLicenseCard = ({ licenseData }: AdminLicenseCardProps) => {
               )}
 
               <Link
-                to="https://docs.davincisolutions.ai/users/licenses/enterprise-edition"
+                to="https://docs.epicgroup.ca/users/licenses/enterprise-edition"
                 target="_blank"
                 className="flex flex-row items-center text-muted-foreground text-xs hover:text-muted-foreground/80"
               >
@@ -92,7 +92,7 @@ export const AdminLicenseCard = ({ licenseData }: AdminLicenseCardProps) => {
         </div>
 
         <h3 className="mb-2 flex items-end font-medium text-foreground text-sm leading-tight">
-          <Trans>Documenso License</Trans>
+          <Trans>Epic Sign License</Trans>
         </h3>
 
         {match(license.status)

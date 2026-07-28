@@ -66,7 +66,7 @@ export const ViewRecoveryCodesDialog = () => {
       });
 
       downloadFile({
-        filename: 'davinci-sign-2FA-recovery-codes.txt',
+        filename: 'epic-sign-2FA-recovery-codes.txt',
         data: blob,
       });
     }

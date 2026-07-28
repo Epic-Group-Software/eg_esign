@@ -17,7 +17,7 @@ smtp:
   port: 587
   username: apikey
   secure: false
-  fromName: Epic Group e-Sign
+  fromName: Epic Sign
   fromAddress: noreply@epicgroup.ca
 
 # Both prod volumes hold data that must survive an accidental delete: the

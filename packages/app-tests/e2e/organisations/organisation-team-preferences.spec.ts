@@ -125,7 +125,7 @@ test('[ORGANISATIONS]: manage branding preferences', async ({ page }) => {
   await page.getByTestId('enable-branding').click();
   await page.getByRole('option', { name: 'Yes' }).click();
   await page.getByRole('textbox', { name: 'Brand Website' }).click();
-  await page.getByRole('textbox', { name: 'Brand Website' }).fill('https://davincisolutions.ai');
+  await page.getByRole('textbox', { name: 'Brand Website' }).fill('https://epicgroup.ca');
   await page.getByRole('textbox', { name: 'Brand Details' }).click();
   await page.getByRole('textbox', { name: 'Brand Details' }).fill('BrandDetails');
   await page.getByRole('button', { name: 'Save changes' }).first().click();
@@ -137,7 +137,7 @@ test('[ORGANISATIONS]: manage branding preferences', async ({ page }) => {
 
   // Check that the team settings have inherited these values.
   expect(teamSettings.brandingEnabled).toEqual(true);
-  expect(teamSettings.brandingUrl).toEqual('https://davincisolutions.ai');
+  expect(teamSettings.brandingUrl).toEqual('https://epicgroup.ca');
   expect(teamSettings.brandingCompanyDetails).toEqual('BrandDetails');
 
   // Edit the team branding settings
@@ -176,7 +176,7 @@ test('[ORGANISATIONS]: manage branding preferences', async ({ page }) => {
 
   // Check that the team settings now inherit from organisation again.
   expect(inheritedTeamSettings.brandingEnabled).toEqual(true);
-  expect(inheritedTeamSettings.brandingUrl).toEqual('https://davincisolutions.ai');
+  expect(inheritedTeamSettings.brandingUrl).toEqual('https://epicgroup.ca');
   expect(inheritedTeamSettings.brandingCompanyDetails).toEqual('BrandDetails');
 
   // Verify that a document can be created successfully with the branding settings
@@ -201,7 +201,7 @@ test('[ORGANISATIONS]: manage email preferences', async ({ page }) => {
   // Update email preferences at organisation level.
   // Set reply to email
   await page.getByRole('textbox', { name: 'Reply to email' }).click();
-  await page.getByRole('textbox', { name: 'Reply to email' }).fill('organisation@davincisolutions.ai');
+  await page.getByRole('textbox', { name: 'Reply to email' }).fill('organisation@epicgroup.ca');
 
   // Update email document settings by enabling/disabling some checkboxes
   await page.getByRole('checkbox', { name: 'Email the owner when a recipient signs' }).uncheck();
@@ -216,7 +216,7 @@ test('[ORGANISATIONS]: manage email preferences', async ({ page }) => {
   });
 
   // Check that the team settings have inherited these values.
-  expect(teamSettings.emailReplyTo).toEqual('organisation@davincisolutions.ai');
+  expect(teamSettings.emailReplyTo).toEqual('organisation@epicgroup.ca');
   expect(teamSettings.emailDocumentSettings).toEqual({
     recipientSigningRequest: true,
     recipientRemoved: true,
@@ -302,7 +302,7 @@ test('[ORGANISATIONS]: manage email preferences', async ({ page }) => {
   });
 
   // Check that the team settings now inherit from organisation again.
-  expect(inheritedTeamSettings.emailReplyTo).toEqual('organisation@davincisolutions.ai');
+  expect(inheritedTeamSettings.emailReplyTo).toEqual('organisation@epicgroup.ca');
   expect(inheritedTeamSettings.emailDocumentSettings).toEqual({
     recipientSigningRequest: true,
     recipientRemoved: true,
@@ -324,7 +324,7 @@ test('[ORGANISATIONS]: manage email preferences', async ({ page }) => {
     },
   });
 
-  expect(documentMeta.emailReplyTo).toEqual('organisation@davincisolutions.ai');
+  expect(documentMeta.emailReplyTo).toEqual('organisation@epicgroup.ca');
   expect(documentMeta.emailSettings).toEqual({
     recipientSigningRequest: true,
     recipientRemoved: true,

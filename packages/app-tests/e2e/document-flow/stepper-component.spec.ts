@@ -344,14 +344,14 @@ test('[DOCUMENT_FLOW]: should be able to approve a document', async ({ page }) =
   const { recipients } = await seedPendingDocumentWithFullFields({
     owner: user,
     teamId: team.id,
-    recipients: ['user@davincisolutions.ai', 'approver@davincisolutions.ai'],
+    recipients: ['user@epicgroup.ca', 'approver@epicgroup.ca'],
     recipientsCreateOptions: [
       {
-        email: 'user@davincisolutions.ai',
+        email: 'user@epicgroup.ca',
         role: RecipientRole.SIGNER,
       },
       {
-        email: 'approver@davincisolutions.ai',
+        email: 'approver@epicgroup.ca',
         role: RecipientRole.APPROVER,
       },
     ],
@@ -402,7 +402,7 @@ test('[DOCUMENT_FLOW]: should be able to create, send with redirect url, sign a 
   await expect(page.getByRole('heading', { name: 'General' })).toBeVisible();
   await page.getByLabel('Title').fill(documentTitle);
   await page.getByRole('button', { name: 'Advanced Options' }).click();
-  await page.getByLabel('Redirect URL').fill('https://davincisolutions.ai');
+  await page.getByLabel('Redirect URL').fill('https://epicgroup.ca');
 
   await page.getByRole('button', { name: 'Continue' }).click();
 
@@ -456,7 +456,7 @@ test('[DOCUMENT_FLOW]: should be able to create, send with redirect url, sign a 
   ).toBeVisible();
   await page.getByRole('button', { name: 'Approve' }).click();
 
-  await page.waitForURL('https://davincisolutions.ai');
+  await page.waitForURL('https://epicgroup.ca');
 
   await expect(async () => {
     // Check if document has been signed

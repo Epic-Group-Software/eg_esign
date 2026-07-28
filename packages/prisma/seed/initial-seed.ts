@@ -38,13 +38,13 @@ export const seedDatabase = async () => {
 
   const exampleUserExists = await prisma.user.findFirst({
     where: {
-      email: 'example@davincisolutions.ai',
+      email: 'example@epicgroup.ca',
     },
   });
 
   const adminUserExists = await prisma.user.findFirst({
     where: {
-      email: 'admin@davincisolutions.ai',
+      email: 'admin@epicgroup.ca',
     },
   });
 
@@ -54,12 +54,12 @@ export const seedDatabase = async () => {
 
   const exampleUser = await seedUser({
     name: 'Example User',
-    email: 'example@davincisolutions.ai',
+    email: 'example@epicgroup.ca',
   });
 
   const adminUser = await seedUser({
     name: 'Admin User',
-    email: 'admin@davincisolutions.ai',
+    email: 'admin@epicgroup.ca',
     isAdmin: true,
   });
 

@@ -15,7 +15,7 @@ export type TeamDeleteEmailProps = {
 
 export const TeamDeleteEmailTemplate = ({
   assetBaseUrl = 'http://localhost:3002',
-  baseUrl = 'https://davincisolutions.ai',
+  baseUrl = 'https://epicgroup.ca',
   teamUrl = 'demo',
 }: TeamDeleteEmailProps) => {
   const { _ } = useLingui();
