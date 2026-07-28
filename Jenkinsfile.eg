@@ -223,7 +223,13 @@ spec:
 }
 
 def podNode() {
-    // 10Gi: tsc needs an 8Gi old-space. Encryption keys are build-time dummies.
+    // tsc runs with an 8Gi old-space (NODE_OPTIONS), so the request has to
+    // reflect that, not just the limit. Eviction ranks pods by usage above
+    // REQUEST: at 4Gi requested and ~8Gi used this pod was the first thing
+    // kubelet killed when a node ran out of RAM, which is what killed the PR-6
+    // build mid-run with a ClosedChannelException. Same failure the kaniko pod
+    // hit; this is the other half of that fix.
+    // Encryption keys are build-time dummies, never used at runtime.
     return '''
 apiVersion: v1
 kind: Pod
@@ -245,10 +251,10 @@ spec:
       value: "1111111111111111111111111111111111111111111111111111111111111111"
     resources:
       requests:
-        memory: "4Gi"
+        memory: "9Gi"
         cpu: "400m"
       limits:
-        memory: "10Gi"
+        memory: "12Gi"
         cpu: "3000m"
 '''
 }
