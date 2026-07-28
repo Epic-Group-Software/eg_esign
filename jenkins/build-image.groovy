@@ -15,7 +15,14 @@ def call() {
 {"auths":{"${REGISTRY}":{"auth":"${AUTH}"}}}
 EOF
                 # Two tags: the immutable per-build one the deploy pins, and
-                # the moving env tag. --single-snapshot caps peak memory.
+                # the moving env tag.
+                #
+                # --single-snapshot and --compressed-caching=false both cap peak
+                # memory. Compressed caching holds layers compressed in RAM
+                # ("increases memory usage" per kaniko's own help); with this
+                # image's node_modules tree that pushed the pod to ~8.7Gi and
+                # got it evicted off a memory-overcommitted node. Slower builds,
+                # but they finish.
                 /kaniko/executor \
                     --context=. \
                     --dockerfile=./docker/Dockerfile \
@@ -24,7 +31,8 @@ EOF
                     --cache=true \
                     --cache-ttl=168h \
                     --cache-repo=${REGISTRY}/${IMAGE_NAME}-cache \
-                    --single-snapshot
+                    --single-snapshot \
+                    --compressed-caching=false
             '''
         }
 
