@@ -186,6 +186,8 @@ config:
   # No self-service password accounts — SSO is the only way in.
   disableEmailPasswordSignup: "true"
   # Entra authenticates any consented tenant; this decides who gets an account.
-  allowedSignupDomains: epicgroup.ca
+  # Partner tenants set their own assignment requirement, so for them this list
+  # is the only gate we control.
+  allowedSignupDomains: epicgroup.ca,epiccommercial.ca
   billingEnabled: "false"
   disableTelemetry: "true"
