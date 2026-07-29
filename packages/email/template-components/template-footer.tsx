@@ -21,7 +21,7 @@ export const TemplateFooter = ({ isDocument = true, reportUrl }: TemplateFooterP
         <Text className="my-4 text-base text-slate-400">
           <Trans>
             Did not expect this email?{' '}
-            <Link className="text-[#1A98CF]" href={reportUrl}>
+            <Link className="text-[#358ab5]" href={reportUrl}>
               Click here to report the sender
             </Link>
             . Never sign a document you don't recognize or weren't expecting.
@@ -33,8 +33,8 @@ export const TemplateFooter = ({ isDocument = true, reportUrl }: TemplateFooterP
         <Text className="my-4 text-base text-slate-400">
           <Trans>
             This document was sent using{' '}
-            <Link className="text-[#1A98CF]" href="https://davincisolutions.ai">
-              Davinci Sign
+            <Link className="text-[#358ab5]" href="https://epicgroup.ca">
+              Epic Sign
             </Link>
             .
           </Trans>
@@ -62,9 +62,7 @@ export const TemplateFooter = ({ isDocument = true, reportUrl }: TemplateFooterP
         </Text>
       )}
 
-      {!branding.brandingEnabled && (
-        <Text className="my-8 text-slate-400 text-sm">Davinci AI Solutions</Text>
-      )}
+      {!branding.brandingEnabled && <Text className="my-8 text-slate-400 text-sm">Epic Group</Text>}
     </Section>
   );
 };

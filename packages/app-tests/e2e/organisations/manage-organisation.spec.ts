@@ -85,11 +85,11 @@ test('[ORGANISATIONS]: inherit members', async ({ page }) => {
     inheritMembers: false,
   });
 
-  const memberEmail = `member-${nanoid()}@test.davincisolutions.ai`;
-  const memberEmail2 = `member-2-${nanoid()}@test.davincisolutions.ai`;
-  const memberEmail3 = `member-3-${nanoid()}@test.davincisolutions.ai`;
-  const managerEmail = `manager-${nanoid()}@test.davincisolutions.ai`;
-  const adminEmail = `admin-${nanoid()}@test.davincisolutions.ai`;
+  const memberEmail = `member-${nanoid()}@test.epicgroup.ca`;
+  const memberEmail2 = `member-2-${nanoid()}@test.epicgroup.ca`;
+  const memberEmail3 = `member-3-${nanoid()}@test.epicgroup.ca`;
+  const managerEmail = `manager-${nanoid()}@test.epicgroup.ca`;
+  const adminEmail = `admin-${nanoid()}@test.epicgroup.ca`;
   const ownerEmail = user.email;
 
   await seedOrganisationMembers({
@@ -204,16 +204,16 @@ test('[ORGANISATIONS]: manage groups and members', async ({ page }) => {
     inheritMembers: false,
   });
 
-  const memberEmail1 = `member-1-${nanoid()}@test.davincisolutions.ai`;
-  const memberEmail2 = `member-2-${nanoid()}@test.davincisolutions.ai`;
-  const memberEmail3 = `member-3-${nanoid()}@test.davincisolutions.ai`;
-  const memberEmail4 = `member-4-${nanoid()}@test.davincisolutions.ai`;
-  const memberEmail5 = `member-5-${nanoid()}@test.davincisolutions.ai`;
-  const memberEmail6 = `member-6-${nanoid()}@test.davincisolutions.ai`;
+  const memberEmail1 = `member-1-${nanoid()}@test.epicgroup.ca`;
+  const memberEmail2 = `member-2-${nanoid()}@test.epicgroup.ca`;
+  const memberEmail3 = `member-3-${nanoid()}@test.epicgroup.ca`;
+  const memberEmail4 = `member-4-${nanoid()}@test.epicgroup.ca`;
+  const memberEmail5 = `member-5-${nanoid()}@test.epicgroup.ca`;
+  const memberEmail6 = `member-6-${nanoid()}@test.epicgroup.ca`;
 
-  const adminEmail1 = `admin-1-${nanoid()}@test.davincisolutions.ai`;
-  const adminEmail2 = `admin-2-${nanoid()}@test.davincisolutions.ai`;
-  const adminEmail3 = `admin-3-${nanoid()}@test.davincisolutions.ai`;
+  const adminEmail1 = `admin-1-${nanoid()}@test.epicgroup.ca`;
+  const adminEmail2 = `admin-2-${nanoid()}@test.epicgroup.ca`;
+  const adminEmail3 = `admin-3-${nanoid()}@test.epicgroup.ca`;
 
   const ownerEmail = user.email;
 
@@ -516,7 +516,7 @@ test('[ORGANISATIONS]: leave organisation', async ({ page }) => {
     isPersonalOrganisation: false,
   });
 
-  const memberEmail = `member-${nanoid()}@test.davincisolutions.ai`;
+  const memberEmail = `member-${nanoid()}@test.epicgroup.ca`;
 
   await seedOrganisationMembers({
     members: [

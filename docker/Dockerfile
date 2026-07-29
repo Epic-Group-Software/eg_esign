@@ -19,7 +19,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN npm install -g "turbo@^1.9.3"
+RUN npm install -g "turbo@^2.10.0"
 
 # Outputs to the /out folder
 # source: https://turbo.build/repo/docs/reference/command-line-reference/prune#--docker
@@ -79,7 +79,15 @@ COPY --from=builder /app/out/full/ .
 # Finally copy the turbo.json file so that we can run turbo commands
 COPY turbo.json turbo.json
 
-RUN npm install -g "turbo@^1.9.3"
+RUN npm install -g "turbo@^2.10.0"
+
+# tsc over this monorepo exceeds Node's default heap and aborts with
+# "Ineffective mark-compacts near heap limit" (exit 134). Node sizes the default
+# from the machine, so this passes on a roomy workstation and fails in a
+# memory-limited build pod — set it explicitly so the build is reproducible
+# wherever it runs. Override with --build-arg if the builder has less memory.
+ARG NODE_OPTIONS="--max-old-space-size=8192"
+ENV NODE_OPTIONS="$NODE_OPTIONS"
 
 RUN turbo run build --filter=@documenso/remix...
 

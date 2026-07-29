@@ -12,7 +12,7 @@ def test_clean_merged_handler_gets_symbol_substitution():
     merged cleanly and so was never branded."""
     src = "import { DOCUMENSO_INTERNAL_EMAIL } from '../../../constants/email';"
     out = sweep_content(src)
-    assert "DAVINCI_INTERNAL_EMAIL" in out
+    assert "EPIC_INTERNAL_EMAIL" in out
     assert "DOCUMENSO_INTERNAL_EMAIL" not in out
 
 
@@ -30,9 +30,9 @@ def test_sweep_does_not_rewrite_bare_documenso_prose():
 
 
 def test_sweep_rewrites_domain_and_docker_and_hex():
-    assert "davincisolutions.ai" in sweep_content("noreply@documenso.com")
-    assert "davinci/davinci-sign" in sweep_content("FROM documenso/documenso:latest")
-    assert "#1A98CF" in sweep_content("color: #7AC455;")
+    assert "epicgroup.ca" in sweep_content("noreply@documenso.com")
+    assert "epic-group-software/eg-esign" in sweep_content("FROM documenso/documenso:latest")
+    assert "#358ab5" in sweep_content("color: #7AC455;")
 
 
 def test_residual_leak_detection_flags_unpreserved_symbol():
@@ -58,7 +58,7 @@ def test_sweep_repo_files_rewrites_and_reports(tmp_path):
     assert "pkg/handler.ts" in result.modified
     assert result.leaks == []  # the @documenso/ import is preserved, symbol fixed
     after = handler.read_text(encoding="utf-8")
-    assert "DAVINCI_INTERNAL_EMAIL" in after
+    assert "EPIC_INTERNAL_EMAIL" in after
     assert "@documenso/lib/constants/email" in after  # import preserved
 
 

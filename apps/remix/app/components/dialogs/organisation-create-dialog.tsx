@@ -336,7 +336,7 @@ const BillingPlanForm = ({ value, onChange, plans, canCreateFreeOrganisation }: 
         >
           <div className="w-full text-left">
             <div className="flex items-center justify-between">
-              <p className="text-medium">
+              <p className="font-medium">
                 <Trans context="Plan price">Free</Trans>
               </p>
 
@@ -380,7 +380,7 @@ const BillingPlanForm = ({ value, onChange, plans, canCreateFreeOrganisation }: 
         ))}
 
         <Link
-          to="https://davincisolutions.ai/enterprise-cta"
+          to="https://epicgroup.ca/enterprise-cta"
           target="_blank"
           className="flex items-center space-x-2 rounded-md border bg-muted/30 p-4"
         >
@@ -398,7 +398,7 @@ const BillingPlanForm = ({ value, onChange, plans, canCreateFreeOrganisation }: 
 
       <div className="mt-6 text-center">
         <Link
-          to="https://davincisolutions.ai/pricing"
+          to="https://epicgroup.ca/pricing"
           className="flex items-center justify-center gap-1 text-primary text-sm hover:text-primary/80 hover:underline"
           target="_blank"
         >

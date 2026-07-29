@@ -131,7 +131,7 @@ class TestWorkflowE2E:
         mock_build_conflict.return_value = FileConflict(
             path="packages/lib/constants/app.ts",
             hunks=[ConflictHunk(
-                ours='export const APP_NAME = "Davinci Sign";\n',
+                ours='export const APP_NAME = "Epic Sign";\n',
                 theirs='export const APP_NAME = "Documenso";\n',
                 context_before="",
                 context_after="",
@@ -141,7 +141,7 @@ class TestWorkflowE2E:
         )
 
         resolved_content = (
-            'export const APP_NAME = "Davinci Sign";\n'
+            'export const APP_NAME = "Epic Sign";\n'
             'export const APP_VERSION = "2.6.0";\n'
         )
 
@@ -150,7 +150,7 @@ class TestWorkflowE2E:
             "tool": "resolve_conflict",
             "file_path": "packages/lib/constants/app.ts",
             "resolved_content": resolved_content,
-            "explanation": "Kept Davinci Sign branding, accepted version bump.",
+            "explanation": "Kept Epic Sign branding, accepted version bump.",
             "confidence": "high",
         }])
 
@@ -190,7 +190,7 @@ class TestWorkflowE2E:
         mock_build_conflict.return_value = FileConflict(
             path="packages/lib/constants/app.ts",
             hunks=[ConflictHunk(
-                ours='const name = "Davinci Sign";\n',
+                ours='const name = "Epic Sign";\n',
                 theirs='const name = "Documenso";\n',
                 context_before="",
                 context_after="",
@@ -227,8 +227,8 @@ class TestWorkflowE2E:
         # Deterministic substitution rewrote both leaked strings.
         assert "Documenso" not in (res.content or "")
         assert "documenso.com" not in (res.content or "")
-        assert 'const name = "Davinci Sign";' in (res.content or "")
-        assert "https://davincisolutions.ai" in (res.content or "")
+        assert 'const name = "Epic Sign";' in (res.content or "")
+        assert "https://epicgroup.ca" in (res.content or "")
 
     # ------------------------------------------------------------------
     # All files flagged for review

@@ -1,0 +1,368 @@
+// eg-esign — Epic Group e-signature instance. Deploys to eg-k8s-01.
+//
+//   PR       -> checks only
+//   staging  -> build + deploy to eg-esign-staging (esign-staging.epicgroup.ca)
+//   main     -> build + deploy to eg-esign-prod    (esign.epicgroup.ca)
+//
+// Separate from the root Jenkinsfile, which deploys the Davinci SaaS instance.
+// Step logic lives in jenkins/*.groovy.
+
+import groovy.json.JsonSlurper
+
+pipeline {
+    agent none
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+        timeout(time: 90, unit: 'MINUTES')
+        timestamps()
+    }
+
+    environment {
+        REGISTRY          = 'epicregistry.azurecr.io'
+        REGISTRY_USERNAME = 'epicregistry'
+        IMAGE_NAME        = 'epic-group-software/eg-esign'
+        GIT_CREDENTIAL_ID = 'f1b484af-24eb-4f28-a57a-66db51117a73'
+        // Jenkins job is 'eg-esign'; the GitHub repo is 'eg_esign'. Set it
+        // explicitly so status/comment API calls hit the right repo.
+        GITHUB_REPO       = 'eg_esign'
+    }
+
+    stages {
+        stage('Init') {
+            agent { kubernetes { yaml podJnlp() } }
+            steps {
+                script {
+                    sh '''#!/bin/bash
+                        mkdir -p ~/.ssh
+                        ssh-keyscan -t rsa,ecdsa,ed25519 github.com > ~/.ssh/known_hosts 2>/dev/null
+                        chmod 600 ~/.ssh/known_hosts
+                    '''
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: scm.branches,
+                        extensions: scm.extensions,
+                        userRemoteConfigs: [[
+                            url: scm.userRemoteConfigs[0].url,
+                            credentialsId: env.GIT_CREDENTIAL_ID,
+                        ]],
+                    ])
+
+                    // Capture here — later stages unstash rather than check out.
+                    env.GIT_COMMIT_SHORT = env.GIT_COMMIT.take(7)
+
+                    def helpers = load 'jenkins/helpers.groovy'
+
+                    // Jenkins' PR merge-commit SHA doesn't exist on GitHub, so
+                    // statuses against it would be invisible. Use the PR head.
+                    if (env.CHANGE_ID) {
+                        helpers.withGitHubCredentials {
+                            def body = sh(returnStdout: true, script: """#!/bin/bash
+                                curl -sS -u "\$GIT_USER:\$GIT_PASS" \
+                                    "https://api.github.com/repos/Epic-Group-Software/${helpers.getRepoName()}/pulls/${env.CHANGE_ID}"
+                            """)
+                            env.STATUS_COMMIT_SHA = new JsonSlurper().parseText(body)?.head?.sha
+                        }
+                        echo "PR head SHA for GitHub statuses: ${env.STATUS_COMMIT_SHA}"
+                    }
+
+                    // Anything not listed here is checks-only.
+                    if (env.BRANCH_NAME == 'main') {
+                        env.ENVN = 'prod'
+                        env.NAMESPACE = 'eg-esign-prod'
+                        env.HOST = 'esign.epicgroup.ca'
+                        env.TAG = 'prod'
+                        env.CRED = '-prod'
+                    } else if (env.BRANCH_NAME == 'staging') {
+                        env.ENVN = 'staging'
+                        env.NAMESPACE = 'eg-esign-staging'
+                        env.HOST = 'esign-staging.epicgroup.ca'
+                        env.TAG = 'staging'
+                        env.CRED = '-staging'
+                    }
+
+                    env.IMAGE_TAG = "${env.TAG ?: 'pr'}-${env.BUILD_NUMBER}-${env.GIT_COMMIT_SHORT}"
+
+                    // Mark every check pending up front so all of them appear
+                    // on the PR immediately. Otherwise the ones that run later
+                    // in the shared Quality pod stay invisible until the
+                    // earlier ones finish.
+                    if (env.CHANGE_ID) {
+                        ['Lint', 'Unit Tests', 'Build & Typecheck', 'Security Scan', 'Helm Lint'].each {
+                            helpers.notifyGitHub(it, 'pending', 'Queued')
+                        }
+                    }
+
+                    echo """eg-esign build configuration:
+  Branch:    ${env.BRANCH_NAME}
+  PR:        ${env.CHANGE_ID ?: 'n/a'}
+  Env:       ${env.ENVN ?: 'checks only'}
+  Namespace: ${env.NAMESPACE ?: 'n/a'}
+  Image tag: ${env.IMAGE_TAG}"""
+
+                    stash includes: '**', name: 'source'
+                }
+            }
+        }
+
+        // Lint, tests, typecheck and helm lint gate the PR, not the merge — by
+        // the time a commit reaches staging/main they have already passed on
+        // exactly that change, and re-running them delayed every deploy by
+        // ~12 minutes. Security Scan still runs on push, because a secret can
+        // reach a branch without ever going through a PR. Matches the
+        // Project-Operations split.
+        stage('Checks') {
+            parallel {
+                stage('Quality') {
+                    when {
+                        changeRequest()
+                        beforeAgent true
+                    }
+                    agent { kubernetes { yaml podNode() } }
+                    steps {
+                        unstash 'source'
+                        script {
+                            def checks = load 'jenkins/checks.groovy'
+                            checks()
+                        }
+                    }
+                }
+
+                stage('Security Scan') {
+                    agent { kubernetes { yaml podSecurity() } }
+                    options { timeout(time: 20, unit: 'MINUTES') }
+                    steps {
+                        unstash 'source'
+                        script {
+                            def helpers = load 'jenkins/helpers.groovy'
+                            helpers.withGitHubStatus('Security Scan') {
+                                def securityScan = load 'jenkins/security-scan.groovy'
+                                securityScan()
+                            }
+                        }
+                    }
+                }
+
+                stage('Helm Lint') {
+                    when {
+                        changeRequest()
+                        beforeAgent true
+                    }
+                    agent { kubernetes { yaml podKubectl() } }
+                    options { timeout(time: 5, unit: 'MINUTES') }
+                    steps {
+                        unstash 'source'
+                        script {
+                            def helpers = load 'jenkins/helpers.groovy'
+                            helpers.withGitHubStatus('Helm Lint') {
+                                def helmLint = load 'jenkins/helm-lint.groovy'
+                                helmLint()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build Image') {
+            when { anyOf { branch 'main'; branch 'staging' } }
+            agent { kubernetes { yaml podKaniko() } }
+            steps {
+                unstash 'source'
+                script {
+                    def buildImage = load 'jenkins/build-image.groovy'
+                    buildImage()
+                }
+            }
+        }
+
+        stage('Deploy') {
+            when { anyOf { branch 'main'; branch 'staging' } }
+            agent { kubernetes { yaml podKubectl() } }
+            options { timeout(time: 25, unit: 'MINUTES') }
+            steps {
+                unstash 'source'
+                script {
+                    def deploy = load 'jenkins/deploy.groovy'
+                    deploy()
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "eg-esign pipeline succeeded" + (env.ENVN ? " — deployed to ${env.ENVN} (https://${env.HOST})" : '')
+        }
+        failure {
+            echo 'eg-esign pipeline failed. See the stage logs above.'
+        }
+    }
+}
+
+// --- Pod templates ------------------------------------------------------
+// CPU requests sit far below the limits on purpose: the Davinci build cluster
+// runs 6 of 7 nodes at 91-99% requested CPU (memory only 21-43%), so a 1000m
+// request leaves pods Pending on "Insufficient cpu". Requests are scheduling
+// reservations, not throttles — these still burst to the limit, and the npm
+// build is memory-bound. Raise them again if the cluster gains capacity.
+
+def podJnlp() {
+    return '''
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: jnlp
+    image: jenkins/inbound-agent:3345.v03dee9b_f88fc-6
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+'''
+}
+
+def podNode() {
+    // tsc runs with an 8Gi old-space (NODE_OPTIONS), so the request has to
+    // reflect that, not just the limit. Eviction ranks pods by usage above
+    // REQUEST: at 4Gi requested and ~8Gi used this pod was the first thing
+    // kubelet killed when a node ran out of RAM, which is what killed the PR-6
+    // build mid-run with a ClosedChannelException. Same failure the kaniko pod
+    // hit; this is the other half of that fix.
+    // Encryption keys are build-time dummies, never used at runtime.
+    return '''
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: jnlp
+    image: jenkins/inbound-agent:3345.v03dee9b_f88fc-6
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+  - name: node
+    image: node:22-alpine
+    command: ['sleep', '9999']
+    env:
+    - name: NEXT_PRIVATE_ENCRYPTION_KEY
+      value: "0000000000000000000000000000000000000000000000000000000000000000"
+    - name: NEXT_PRIVATE_ENCRYPTION_SECONDARY_KEY
+      value: "1111111111111111111111111111111111111111111111111111111111111111"
+    resources:
+      requests:
+        memory: "9Gi"
+        cpu: "400m"
+      limits:
+        memory: "12Gi"
+        cpu: "3000m"
+'''
+}
+
+def podSecurity() {
+    return '''
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: jnlp
+    image: jenkins/inbound-agent:3345.v03dee9b_f88fc-6
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+  - name: gitleaks
+    image: zricethezav/gitleaks:latest
+    command: ['sleep', '9999']
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "100m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+  - name: trivy
+    image: aquasec/trivy:0.72.0
+    command: ['sleep', '9999']
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "100m"
+      limits:
+        memory: "4Gi"
+        cpu: "2000m"
+'''
+}
+
+def podKaniko() {
+    // trivy rides along to scan the pushed image without a second pod.
+    // The image build runs tsc with an 8Gi heap (see docker/Dockerfile) and
+    // kaniko needs headroom for layer snapshots, so the limit is 14Gi.
+    //
+    // The memory REQUEST matters just as much. Eviction ranks pods by usage
+    // above their request, not against their limit: at 4Gi requested and
+    // ~8.7Gi actually used, this pod was the first thing kubelet killed when a
+    // node (137-177% overcommitted on memory limits) ran out of RAM. Requesting
+    // 10Gi reflects real usage, so it schedules where the memory exists and is
+    // no longer the eviction target. Nodes have 16-20Gi free by request.
+    // CPU request stays low — that dimension is the constrained one.
+    return '''
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: jnlp
+    image: jenkins/inbound-agent:3345.v03dee9b_f88fc-6
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:v1.23.2-debug
+    command: ['sleep', '9999']
+    resources:
+      requests:
+        memory: "10Gi"
+        cpu: "400m"
+      limits:
+        memory: "14Gi"
+        cpu: "3000m"
+  - name: trivy
+    image: aquasec/trivy:0.72.0
+    command: ['sleep', '9999']
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "100m"
+      limits:
+        memory: "4Gi"
+        cpu: "2000m"
+'''
+}
+
+def podKubectl() {
+    // alpine/k8s bundles kubectl and helm.
+    return '''
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: jnlp
+    image: jenkins/inbound-agent:3345.v03dee9b_f88fc-6
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+  - name: kubectl
+    image: alpine/k8s:1.32.1
+    command: ['cat']
+    tty: true
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+'''
+}

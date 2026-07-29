@@ -51,7 +51,7 @@ export default function SupportPage() {
             <h2 className="flex items-center gap-2 font-bold text-lg">
               <BookIcon className="h-5 w-5 text-muted-foreground" />
               <Link
-                to="https://docs.davincisolutions.ai"
+                to="https://docs.epicgroup.ca"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:underline"
@@ -60,7 +60,7 @@ export default function SupportPage() {
               </Link>
             </h2>
             <p className="mt-1 text-muted-foreground">
-              <Trans>Read our documentation to get started with Davinci Sign.</Trans>
+              <Trans>Read our documentation to get started with Epic Sign.</Trans>
             </p>
           </div>
           <div className="rounded-lg border p-4">

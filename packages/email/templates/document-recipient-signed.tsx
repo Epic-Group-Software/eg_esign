@@ -17,7 +17,7 @@ export interface DocumentRecipientSignedEmailTemplateProps {
 export const DocumentRecipientSignedEmailTemplate = ({
   documentName = 'Open Source Pledge.pdf',
   recipientName = 'John Doe',
-  recipientEmail = 'lucas@davincisolutions.ai',
+  recipientEmail = 'lucas@epicgroup.ca',
   assetBaseUrl = 'http://localhost:3002',
 }: DocumentRecipientSignedEmailTemplateProps) => {
   const { _ } = useLingui();
@@ -34,7 +34,7 @@ export const DocumentRecipientSignedEmailTemplate = ({
         <Preview>{_(previewText)}</Preview>
 
         <Section className="bg-background">
-          <Container className="mx-auto mb-2 mt-8 max-w-xl rounded-lg border border-solid border-border p-2 backdrop-blur-sm">
+          <Container className="mx-auto mt-8 mb-2 max-w-xl rounded-lg border border-border border-solid p-2 backdrop-blur-sm">
             <Section className="p-2">
               {branding.brandingEnabled && branding.brandingLogo ? (
                 <Img src={branding.brandingLogo} alt="Branding Logo" className="mb-4 h-6" />

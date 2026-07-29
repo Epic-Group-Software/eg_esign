@@ -2,12 +2,12 @@ import type { DocsThemeConfig } from 'nextra-theme-docs';
 import { useConfig } from 'nextra-theme-docs';
 
 const themeConfig: DocsThemeConfig = {
-  logo: <span>Davinci Sign</span>,
+  logo: <span>Epic Sign</span>,
   head: function useHead() {
     const config = useConfig();
 
-    const title = `${config.frontMatter.title} | Davinci Sign Docs` || 'Davinci Sign Docs';
-    const description = config.frontMatter.description || 'The official Davinci Sign documentation';
+    const title = `${config.frontMatter.title} | Epic Sign Docs` || 'Epic Sign Docs';
+    const description = config.frontMatter.description || 'The official Epic Sign documentation';
 
     return (
       <>
@@ -50,11 +50,11 @@ const themeConfig: DocsThemeConfig = {
     content: (
       <span>
         {new Date().getFullYear()} ©{' '}
-        <a href="https://davincisolutions.ai" target="_blank">
-          Davinci AI Solutions
+        <a href="https://epicgroup.ca" target="_blank" rel="noopener">
+          Epic Group
         </a>
         . Based on{' '}
-        <a href="https://documen.so" target="_blank">
+        <a href="https://documen.so" target="_blank" rel="noopener">
           Documenso
         </a>
         .

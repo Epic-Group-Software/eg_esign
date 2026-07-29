@@ -1,0 +1,39 @@
+# Production overlay — applied on top of values.yaml (see jenkins/deploy.groovy).
+namespace: eg-esign-prod
+fqdn: esign.epicgroup.ca
+tag: prod
+
+ingress:
+  tls:
+    secretName: eg-esign-prod-tls
+
+# No mail sink in production — real delivery via SendGrid.
+mailpit:
+  enabled: false
+
+smtp:
+  transport: smtp-auth
+  host: smtp.sendgrid.net
+  port: 587
+  username: apikey
+  secure: false
+  fromName: Epic Sign
+  fromAddress: noreply@epicgroup.ca
+
+# Both prod volumes hold data that must survive an accidental delete: the
+# signed-document store and the audit-trail database. The cluster `default`
+# class is reclaimPolicy: Delete, so prod gets its own Retain class.
+# NOTE: storageClassName is immutable on an existing PVC — changing this after
+# the first deploy needs the PVC recreated and the data migrated.
+persistence:
+  createStorageClass: true
+  storageClassName: eg-esign-prod-data
+  skuName: Premium_LRS
+
+postgres:
+  persistence:
+    size: 20Gi
+
+minio:
+  persistence:
+    size: 100Gi

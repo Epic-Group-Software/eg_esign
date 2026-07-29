@@ -67,19 +67,88 @@ module.exports = {
           DEFAULT: 'hsl(var(--widget))',
           foreground: 'hsl(var(--widget-foreground))',
         },
+        // Epic Group brand palette.
+        //
+        // The key is still `documenso` on purpose: ~40 components use
+        // `text-documenso*` / `bg-documenso*` and four e2e specs assert
+        // `svg.text-documenso`. Renaming it would be a large, purely cosmetic
+        // diff, so only the values change. This is the primary (epic-blue).
+        //
+        // Scales come from Project-Operations/react/src/theme.ts, which is the
+        // reference Epic Group palette. Note the previous ramp was fake —
+        // only DEFAULT/500 were brand, 50-400 and 600-950 were stock Tailwind
+        // `sky`, so 600 was barely darker than 500.
         documenso: {
-          DEFAULT: '#1A98CF',
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#1A98CF',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
-          950: '#082f49',
+          DEFAULT: '#358ab5',
+          50: '#eff6f9',
+          100: '#dbeaf2',
+          200: '#bedae7',
+          300: '#9ec7db',
+          400: '#7cb3cf',
+          500: '#358ab5',
+          600: '#2b7194',
+          700: '#215670',
+          800: '#153748',
+          900: '#0f2734',
+          950: '#0b1d26',
+        },
+        'epic-blue': {
+          DEFAULT: '#358ab5',
+          50: '#eff6f9',
+          100: '#dbeaf2',
+          200: '#bedae7',
+          300: '#9ec7db',
+          400: '#7cb3cf',
+          500: '#358ab5',
+          600: '#2b7194',
+          700: '#215670',
+          800: '#153748',
+          900: '#0f2734',
+          950: '#0b1d26',
+        },
+        // Secondary / accent. Kept distinct from `destructive`, which stays on
+        // its own token so "delete" never looks like a brand action.
+        'epic-red': {
+          DEFAULT: '#e91d2d',
+          50: '#ffeaeb',
+          100: '#fdd4d6',
+          200: '#f4a8ab',
+          300: '#ee7a7e',
+          400: '#ea4f55',
+          500: '#e91d2d',
+          600: '#d11525',
+          700: '#b8101f',
+          800: '#9e0c19',
+          900: '#850814',
+          950: '#5c050e',
+        },
+        'epic-charcoal': {
+          DEFAULT: '#3d3935',
+          50: '#f7f5f3',
+          100: '#eae6e1',
+          200: '#d8d1ca',
+          300: '#bcb2a9',
+          400: '#9a8f84',
+          500: '#6f665d',
+          600: '#3d3935',
+          700: '#2c2926',
+          800: '#1e1c1a',
+          900: '#131211',
+          950: '#0a0909',
+        },
+        'epic-taupe': {
+          DEFAULT: '#958a82',
+          50: '#f7f5f4',
+          100: '#ece8e5',
+          200: '#d9d2cc',
+          300: '#c6bcb3',
+          400: '#b3a69a',
+          500: '#958a82',
+          600: '#7a7068',
+          700: '#5f574f',
+          800: '#453f39',
+          900: '#2c2824',
+          950: '#1a1714',
         },
         dawn: {
           DEFAULT: '#aaa89f',

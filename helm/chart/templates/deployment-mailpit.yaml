@@ -1,0 +1,100 @@
+{{- if .Values.mailpit.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "app.fullname" . }}-mailpit
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "app.componentLabels" (dict "component" "mailpit" "context" .) | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "app.componentSelectorLabels" (dict "component" "mailpit" "context" .) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "app.componentSelectorLabels" (dict "component" "mailpit" "context" .) | nindent 8 }}
+    spec:
+      containers:
+        - name: mailpit
+          image: axllent/mailpit:v1.27
+          env:
+            - name: MP_DATABASE
+              value: /data/mailpit.db
+            # Served under a sub-path of the app host, so mailpit has to know
+            # its own webroot or every asset request 404s.
+            - name: MP_WEBROOT
+              value: {{ .Values.mailpit.webroot | quote }}
+            - name: MP_UI_AUTH
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "app.fullname" . }}-secret
+                  key: MAILPIT_UI_AUTH
+            - name: MP_MAX_MESSAGES
+              value: "5000"
+            # The staging SMTP password is a placeholder, not a real secret.
+            - name: MP_SMTP_AUTH_ACCEPT_ANY
+              value: "1"
+            - name: MP_SMTP_AUTH_ALLOW_INSECURE
+              value: "1"
+            - name: MP_ENABLE_SPAMASSASSIN
+              value: "localhost:783"
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.mailpit.httpPort }}
+            - name: smtp
+              containerPort: {{ .Values.service.mailpit.smtpPort }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.mailpit.webroot }}livez
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.mailpit.webroot }}readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            {{- toYaml .Values.mailpit.resources | nindent 12 }}
+        - name: spamassassin
+          image: axllent/spamassassin:latest
+          ports:
+            - name: spamd
+              containerPort: 783
+          livenessProbe:
+            tcpSocket:
+              port: 783
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.mailpit.spamassassin.resources | nindent 12 }}
+      volumes:
+        # Captured staging mail is disposable.
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "app.fullname" . }}-mailpit
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "app.componentLabels" (dict "component" "mailpit" "context" .) | nindent 4 }}
+spec:
+  type: {{ .Values.service.mailpit.type }}
+  selector:
+    {{- include "app.componentSelectorLabels" (dict "component" "mailpit" "context" .) | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.service.mailpit.httpPort }}
+      targetPort: http
+    - name: smtp
+      port: {{ .Values.service.mailpit.smtpPort }}
+      targetPort: smtp
+{{- end }}
