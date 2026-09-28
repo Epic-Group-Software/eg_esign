@@ -16,6 +16,13 @@ spec:
       labels:
         {{- include "app.componentSelectorLabels" (dict "component" "minio" "context" .) | nindent 8 }}
     spec:
+      # Chainguard's image defaults to uid 65532, but the existing data is owned by
+      # root (the old minio/minio image ran as root). Group access via fsGroup is
+      # not enough: MinIO fails with "Unable to write to the backend" unless it
+      # owns the files. Running as root keeps the data untouched.
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
       containers:
         - name: minio
           image: "{{ .Values.image.minio.repository }}:{{ .Values.image.minio.tag }}"
