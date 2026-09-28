@@ -16,6 +16,11 @@ spec:
       labels:
         {{- include "app.componentSelectorLabels" (dict "component" "minio" "context" .) | nindent 8 }}
     spec:
+      # The image runs as 65532; data written by the old root-run image needs
+      # regrouping on first mount.
+      securityContext:
+        fsGroup: 65532
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: minio
           image: "{{ .Values.image.minio.repository }}:{{ .Values.image.minio.tag }}"
