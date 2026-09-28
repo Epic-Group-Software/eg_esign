@@ -11,12 +11,15 @@ image:
   postgres:
     repository: postgres
     tag: "17"
+  # MinIO stopped publishing images (Docker Hub removed, quay.io now needs
+  # auth), so these come from Chainguard, which builds from upstream source.
   minio:
-    repository: minio/minio
+    repository: cgr.dev/chainguard/minio
     tag: latest
+  # -dev variant: the create-bucket init container needs a shell.
   mc:
-    repository: minio/mc
-    tag: latest
+    repository: cgr.dev/chainguard/minio-client
+    tag: latest-dev
 
 imagePullSecrets:
   - name: acr-pull-secret
