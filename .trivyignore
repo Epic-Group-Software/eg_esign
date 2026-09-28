@@ -10,24 +10,12 @@
 # Verified against the built image: react-router, sharp and brace-expansion do
 # ship in the runtime image, so these are real exposures, not dev-tree noise.
 # Re-triage when the nightly upstream-sync bumps these.
+#
+# 2026-09-28: next 16.3.6 (postcss 8.5.23, sharp ^0.35.3), sharp 0.35.5 and
+# brace-expansion ^5.0.9 cleared the postcss, sharp and brace-expansion
+# entries that used to be here.
 
 # react-router 7.18.1 -> 8.3.0. A 7->8 major of the app's own framework
 # (apps/remix runs React Router in framework mode) — its own project, not a
 # CI-unblocking patch.
 GHSA-qwww-vcr4-c8h2
-
-# postcss 8.4.31 -> 8.5.12 / 8.5.18. Nested inside `next` as
-# node_modules/next/node_modules/postcss; root postcss is already 8.5.19 and
-# the existing overrides entry doesn't reach a workspace-nested copy.
-CVE-2026-45623
-GHSA-r28c-9q8g-f849
-
-# brace-expansion 2.1.2 -> 5.0.8. Root is overridden to 5.0.8; @hono/vite-dev-server,
-# filelist and google-gax keep a nested 2.x that npm overrides don't rewrite.
-CVE-2026-14257
-
-# sharp 0.34.5 -> 0.35.0. Attempted and reverted: 0.35.0 restructured its type
-# declarations, so the pruned Docker build fails with TS7016 "Could not find a
-# declaration file for module 'sharp'" in packages/lib/utils/images/*. Needs
-# @types/sharp or upstream code changes, not a version bump.
-GHSA-f88m-g3jw-g9cj
