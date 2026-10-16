@@ -191,6 +191,6 @@ config:
   # Entra authenticates any consented tenant; this decides who gets an account.
   # Partner tenants set their own assignment requirement, so for them this list
   # is the only gate we control.
-  allowedSignupDomains: epicgroup.ca,epiccommercial.ca
+  allowedSignupDomains: epicgroup.ca,epiccommercial.ca,epicroofing.ca,rushroofing.com
   billingEnabled: "false"
   disableTelemetry: "true"
