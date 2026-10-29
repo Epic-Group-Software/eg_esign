@@ -180,6 +180,9 @@ config:
   uploadTransport: s3
   uploadRegion: us-east-1
   documentSizeUploadLimit: "50"
+  # Zone for documents created without one. Alberta stays on UTC-6 all year from
+  # 2026-11-01, so use America/Edmonton, never a generic Mountain zone such as America/Denver.
+  defaultDocumentTimeZone: America/Edmonton
   # Master switch stays OFF. It blocks every signup path including OIDC
   # (isSignupEnabledForProvider short-circuits on it), so with it on nobody can
   # ever create the first account — not even an approved Entra user. Signup is

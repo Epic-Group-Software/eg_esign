@@ -141,6 +141,7 @@ export const generateCertificatePdf = async (options: GenerateCertificatePdfOpti
     hidePoweredBy: organisationClaim.flags.hidePoweredBy ?? false,
     pageWidth,
     pageHeight,
+    timeZone: envelope.documentMeta.timezone,
     i18n,
   };
 

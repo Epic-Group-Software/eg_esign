@@ -24,7 +24,7 @@ type FieldIconProps = {
     fieldMeta?: TFieldMetaSchema | null;
     signature?: Signature | null;
   };
-  documentMeta?: Pick<DocumentMeta, 'dateFormat'>;
+  documentMeta?: Pick<DocumentMeta, 'dateFormat' | 'timezone'>;
 };
 
 /**
@@ -159,6 +159,7 @@ export const FieldContent = ({ field, documentMeta }: FieldIconProps) => {
       textToDisplay = convertToLocalSystemFormat(
         field.customText ?? '',
         documentMeta?.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT,
+        documentMeta?.timezone,
       );
     }
 
