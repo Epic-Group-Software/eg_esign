@@ -6,7 +6,6 @@ import Konva from 'konva';
 import 'konva/skia-backend';
 import fs from 'node:fs';
 import path from 'node:path';
-import { DateTime } from 'luxon';
 import type { Canvas } from 'skia-canvas';
 import { Image as SkiaImage } from 'skia-canvas';
 import { UAParser } from 'ua-parser-js';
@@ -17,6 +16,7 @@ import { APP_I18N_OPTIONS } from '../../constants/i18n';
 import { getSignatureFontFamily } from '../../constants/pdf';
 import { RECIPIENT_ROLE_SIGNING_REASONS, RECIPIENT_ROLES_DESCRIPTION } from '../../constants/recipient-roles';
 import type { TDocumentAuditLogBaseSchema } from '../../types/document-audit-logs';
+import { toDocumentTimeZone } from '../../utils/document-time-zone';
 import { svgToPng } from '../../utils/images/svg-to-png';
 import { ensureFontLibrary } from './helpers';
 
@@ -56,6 +56,7 @@ type GenerateCertificateOptions = {
   };
   pageWidth: number;
   pageHeight: number;
+  timeZone?: string | null;
 };
 
 // Helper function to get device info from user agent
@@ -194,6 +195,7 @@ type RenderColumnOptions = {
   recipient: CertificateRecipient;
   width: number;
   i18n: I18n;
+  timeZone?: string | null;
   envelopeOwner: {
     name: string;
     email: string;
@@ -407,7 +409,7 @@ const renderColumnTwo = (options: RenderColumnOptions) => {
 };
 
 const renderColumnThree = (options: RenderColumnOptions) => {
-  const { recipient, width, i18n, envelopeOwner } = options;
+  const { recipient, width, i18n, envelopeOwner, timeZone } = options;
 
   const column = new Konva.Group();
 
@@ -422,11 +424,11 @@ const renderColumnThree = (options: RenderColumnOptions) => {
     {
       label: i18n._(msg`Sent`),
       value: recipient.logs.emailed
-        ? DateTime.fromJSDate(recipient.logs.emailed.createdAt)
+        ? toDocumentTimeZone(recipient.logs.emailed.createdAt, timeZone)
             .setLocale(APP_I18N_OPTIONS.defaultLocale)
             .toFormat('yyyy-MM-dd hh:mm:ss a (ZZZZ)')
         : recipient.logs.sent
-          ? DateTime.fromJSDate(recipient.logs.sent.createdAt)
+          ? toDocumentTimeZone(recipient.logs.sent.createdAt, timeZone)
               .setLocale(APP_I18N_OPTIONS.defaultLocale)
               .toFormat('yyyy-MM-dd hh:mm:ss a (ZZZZ)')
           : i18n._(msg`Unknown`),
@@ -434,7 +436,7 @@ const renderColumnThree = (options: RenderColumnOptions) => {
     {
       label: i18n._(msg`Viewed`),
       value: recipient.logs.opened
-        ? DateTime.fromJSDate(recipient.logs.opened.createdAt)
+        ? toDocumentTimeZone(recipient.logs.opened.createdAt, timeZone)
             .setLocale(APP_I18N_OPTIONS.defaultLocale)
             .toFormat('yyyy-MM-dd hh:mm:ss a (ZZZZ)')
         : i18n._(msg`Unknown`),
@@ -444,7 +446,7 @@ const renderColumnThree = (options: RenderColumnOptions) => {
   if (recipient.logs.rejected) {
     itemsToRender.push({
       label: i18n._(msg`Rejected`),
-      value: DateTime.fromJSDate(recipient.logs.rejected.createdAt)
+      value: toDocumentTimeZone(recipient.logs.rejected.createdAt, timeZone)
         .setLocale(APP_I18N_OPTIONS.defaultLocale)
         .toFormat('yyyy-MM-dd hh:mm:ss a (ZZZZ)'),
       labelFill: textRejectedRed,
@@ -454,7 +456,7 @@ const renderColumnThree = (options: RenderColumnOptions) => {
     itemsToRender.push({
       label: i18n._(msg`Signed`),
       value: recipient.logs.completed
-        ? DateTime.fromJSDate(recipient.logs.completed.createdAt)
+        ? toDocumentTimeZone(recipient.logs.completed.createdAt, timeZone)
             .setLocale(APP_I18N_OPTIONS.defaultLocale)
             .toFormat('yyyy-MM-dd hh:mm:ss a (ZZZZ)')
         : i18n._(msg`Unknown`),
@@ -492,6 +494,7 @@ type RenderRowOptions = {
   recipient: CertificateRecipient;
   columnWidths: ColumnWidths;
   i18n: I18n;
+  timeZone?: string | null;
   envelopeOwner: {
     name: string;
     email: string;
@@ -499,7 +502,7 @@ type RenderRowOptions = {
 };
 
 const renderRow = (options: RenderRowOptions) => {
-  const { recipient, columnWidths, i18n, envelopeOwner } = options;
+  const { recipient, columnWidths, i18n, envelopeOwner, timeZone } = options;
 
   const rowGroup = new Konva.Group();
 
@@ -545,6 +548,7 @@ const renderRow = (options: RenderRowOptions) => {
     width: columnWidths[2],
     i18n,
     envelopeOwner,
+    timeZone,
   });
   columnThreeGroup.setAttrs({
     x: rowPadding + columnWidths[0] + columnWidths[1],
@@ -629,6 +633,7 @@ type GroupRowsIntoPagesOptions = {
   maxHeight: number;
   i18n: I18n;
   columnWidths: ColumnWidths;
+  timeZone?: string | null;
   envelopeOwner: {
     name: string;
     email: string;
@@ -636,7 +641,7 @@ type GroupRowsIntoPagesOptions = {
 };
 
 const groupRowsIntoPages = (options: GroupRowsIntoPagesOptions) => {
-  const { recipients, maxHeight, i18n, columnWidths, envelopeOwner } = options;
+  const { recipients, maxHeight, i18n, columnWidths, envelopeOwner, timeZone } = options;
 
   const rowHeader = renderRowHeader({ columnWidths, i18n });
   const rowHeaderHeight = rowHeader.getClientRect().height;
@@ -648,7 +653,7 @@ const groupRowsIntoPages = (options: GroupRowsIntoPagesOptions) => {
 
   // Group rows into pages.
   for (const recipient of recipients) {
-    const row = renderRow({ recipient, columnWidths, i18n, envelopeOwner });
+    const row = renderRow({ recipient, columnWidths, i18n, envelopeOwner, timeZone });
 
     const rowHeight = row.getClientRect().height;
 
@@ -722,6 +727,7 @@ export async function renderCertificate({
   envelopeOwner,
   pageWidth,
   pageHeight,
+  timeZone,
 }: GenerateCertificateOptions) {
   ensureFontLibrary();
 
@@ -748,6 +754,7 @@ export async function renderCertificate({
     columnWidths,
     i18n,
     envelopeOwner,
+    timeZone,
   });
 
   const tables = renderTables({ groupedRows, columnWidths, i18n });

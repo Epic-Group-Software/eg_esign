@@ -18,6 +18,7 @@ import { RECIPIENT_ROLES_DESCRIPTION } from '../../constants/recipient-roles';
 import type { TDocumentAuditLog } from '../../types/document-audit-logs';
 import { DOCUMENT_AUDIT_LOG_TYPE } from '../../types/document-audit-logs';
 import { formatDocumentAuditLogAction } from '../../utils/document-audit-logs';
+import { toDocumentTimeZone } from '../../utils/document-time-zone';
 import { ensureFontLibrary } from './helpers';
 
 export type AuditLogRecipient = {
@@ -238,14 +239,14 @@ const renderOverviewCard = (options: RenderOverviewCardOptions) => {
 
   const createdAtLabel = renderOverviewCardLabels({
     label: i18n._(msg`Created At`),
-    text: DateTime.fromJSDate(envelope.createdAt)
+    text: toDocumentTimeZone(envelope.createdAt, envelope.documentMeta?.timezone)
       .setLocale(APP_I18N_OPTIONS.defaultLocale)
       .toFormat('yyyy-MM-dd hh:mm:ss a (ZZZZ)'),
     width: columnWidth,
   });
   const lastUpdatedLabel = renderOverviewCardLabels({
     label: i18n._(msg`Last Updated`),
-    text: DateTime.fromJSDate(envelope.updatedAt)
+    text: toDocumentTimeZone(envelope.updatedAt, envelope.documentMeta?.timezone)
       .setLocale(APP_I18N_OPTIONS.defaultLocale)
       .toFormat('yyyy-MM-dd hh:mm:ss a (ZZZZ)'),
     width: columnWidth,
@@ -301,10 +302,11 @@ type RenderRowOptions = {
   auditLog: TDocumentAuditLog;
   width: number;
   i18n: I18n;
+  timeZone?: string | null;
 };
 
 const renderRow = (options: RenderRowOptions) => {
-  const { auditLog, width, i18n } = options;
+  const { auditLog, width, i18n, timeZone } = options;
 
   const paddingWithinCard = 12;
 
@@ -348,7 +350,9 @@ const renderRow = (options: RenderRowOptions) => {
   const auditLogTimestampText = new Konva.Text({
     x: columnWidth + columnSpacing,
     width: columnWidth,
-    text: DateTime.fromJSDate(auditLog.createdAt).setLocale(APP_I18N_OPTIONS.defaultLocale).toLocaleString(dateFormat),
+    text: toDocumentTimeZone(auditLog.createdAt, timeZone)
+      .setLocale(APP_I18N_OPTIONS.defaultLocale)
+      .toLocaleString(dateFormat),
     fontFamily: 'Inter',
     align: 'right',
     fontSize: textSm,
@@ -461,11 +465,12 @@ type GroupRowsIntoPagesOptions = {
   maxHeight: number;
   contentWidth: number;
   i18n: I18n;
+  timeZone?: string | null;
   overviewCard: Konva.Group;
 };
 
 const groupRowsIntoPages = (options: GroupRowsIntoPagesOptions) => {
-  const { auditLogs, maxHeight, contentWidth, i18n, overviewCard } = options;
+  const { auditLogs, maxHeight, contentWidth, i18n, overviewCard, timeZone } = options;
 
   const groupedRows: Konva.Group[][] = [[]];
 
@@ -477,7 +482,7 @@ const groupRowsIntoPages = (options: GroupRowsIntoPagesOptions) => {
 
   // Group rows into pages.
   for (const auditLog of auditLogs) {
-    const row = renderRow({ auditLog, width: contentWidth, i18n });
+    const row = renderRow({ auditLog, width: contentWidth, i18n, timeZone });
 
     const rowHeight = row.getClientRect().height;
     const requiredHeight = rowHeight + rowPadding;
@@ -592,6 +597,7 @@ export async function renderAuditLogs({
     maxHeight: pageHeight - pageBottomMargin,
     contentWidth,
     i18n,
+    timeZone: envelope.documentMeta?.timezone,
     overviewCard,
   });
 
