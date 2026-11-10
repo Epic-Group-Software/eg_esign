@@ -19,3 +19,19 @@
 # (apps/remix runs React Router in framework mode) — its own project, not a
 # CI-unblocking patch.
 GHSA-qwww-vcr4-c8h2
+
+# 2026-10-29: the lockfile updates, axios ^1.20.0 and next 16.4.1 cleared the
+# other 23 findings. These two are fixed only in nodemailer 10 (10.0.5, 10.0.6;
+# no 9.x backport). That is a major of the mail library every outgoing email
+# goes through (packages/email), and @documenso/nodemailer-resend 5.0.0 still
+# peers on nodemailer ^9, so it is its own change, not a CI-unblocking patch.
+# Both are CPU denial of service in nodemailer's addressparser. Here it only
+# parses addresses passed as plain strings (reply-to, members' account emails,
+# fixed system addresses); each is a constant or validated by zEmail / zod
+# .email() first, which rejects the parentheses, brackets and whitespace both
+# exploits need. Recipient names, including ones typed by unauthenticated
+# direct-template signers and at sign-up, are passed as { name, address }
+# objects, which nodemailer does not run through addressparser. Keep it that
+# way; remove these two lines with the nodemailer 10 upgrade.
+CVE-2026-90776
+GHSA-v53p-9fqp-m79j

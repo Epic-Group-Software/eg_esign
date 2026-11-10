@@ -15,6 +15,20 @@
 # .trivyignore dependency bumps cleared every other entry. Verified by scanning
 # the built image with no ignorefile: only the one below remains.
 # ---------------------------------------------------------------------------
-# Same app-level finding baselined in .trivyignore (Trivy takes one ignorefile,
+# Same app-level findings baselined in .trivyignore (Trivy takes one ignorefile,
 # so this file has to be a superset). See .trivyignore for the reasoning.
 GHSA-qwww-vcr4-c8h2   # react-router 7 -> 8, a framework major
+CVE-2026-90776        # nodemailer 9 -> 10, a major; see .trivyignore
+GHSA-v53p-9fqp-m79j   # nodemailer 9 -> 10, a major; see .trivyignore
+
+# ---------------------------------------------------------------------------
+# 2026-10-29: npm 11.21.1 in the base image (brace-expansion 5.0.12, undici
+# 6.29.0) cleared the npm 11.20.0 findings except three in its bundled undici,
+# fixed in 6.29.1, which no npm release bundles yet. This npm only runs at
+# build time (`npm ci`, `npx prisma generate`) and at start (`npx prisma
+# migrate deploy` against the installed prisma); it serves no requests. Remove
+# these three with the next npm bump.
+# ---------------------------------------------------------------------------
+CVE-2026-109383       # undici in npm 11.21.1
+CVE-2026-109869       # undici in npm 11.21.1
+CVE-2026-87018        # undici in npm 11.21.1
