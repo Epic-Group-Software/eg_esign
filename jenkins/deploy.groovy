@@ -34,6 +34,8 @@ def call() {
                 echo "Deploying eg-esign to \${ENVN} (ns \${NAMESPACE}, image \${IMAGE_TAG})"
                 kubectl cluster-info
                 kubectl create namespace "\${NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
+                # The shared Gateway only accepts ListenerSets from namespaces with this label.
+                kubectl label namespace "\${NAMESPACE}" gateway.davincisolutions.ai/public-listeners=true --overwrite
 
                 # The chart references imagePullSecrets: acr-pull-secret, which
                 # Helm does not own.
