@@ -18,8 +18,8 @@
 # Same app-level findings baselined in .trivyignore (Trivy takes one ignorefile,
 # so this file has to be a superset). See .trivyignore for the reasoning.
 GHSA-qwww-vcr4-c8h2   # react-router 7 -> 8, a framework major
-CVE-2026-90776        # nodemailer 9 -> 10, a major; see .trivyignore
-GHSA-v53p-9fqp-m79j   # nodemailer 9 -> 10, a major; see .trivyignore
+CVE-2026-90776 exp:2026-12-10        # nodemailer 9 -> 10, a major; see .trivyignore
+GHSA-v53p-9fqp-m79j exp:2026-12-10   # nodemailer 9 -> 10, a major; see .trivyignore
 
 # ---------------------------------------------------------------------------
 # 2026-10-29: npm 11.21.1 in the base image (brace-expansion 5.0.12, undici
@@ -29,6 +29,6 @@ GHSA-v53p-9fqp-m79j   # nodemailer 9 -> 10, a major; see .trivyignore
 # migrate deploy` against the installed prisma); it serves no requests. Remove
 # these three with the next npm bump.
 # ---------------------------------------------------------------------------
-CVE-2026-109383       # undici in npm 11.21.1
-CVE-2026-109869       # undici in npm 11.21.1
-CVE-2026-87018        # undici in npm 11.21.1
+CVE-2026-109383 exp:2026-12-10       # undici in npm 11.21.1
+CVE-2026-109869 exp:2026-12-10       # undici in npm 11.21.1
+CVE-2026-87018 exp:2026-12-10        # undici in npm 11.21.1

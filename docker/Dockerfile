@@ -3,6 +3,8 @@
 ###########################
 FROM node:22-alpine3.22 AS base
 
+# The node image lags Alpine's security fixes (musl, zlib, openssl): take them at build time.
+RUN apk upgrade --no-cache
 RUN apk add --no-cache openssl
 RUN apk add --no-cache font-freefont
 

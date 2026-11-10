@@ -33,5 +33,5 @@ GHSA-qwww-vcr4-c8h2
 # direct-template signers and at sign-up, are passed as { name, address }
 # objects, which nodemailer does not run through addressparser. Keep it that
 # way; remove these two lines with the nodemailer 10 upgrade.
-CVE-2026-90776
-GHSA-v53p-9fqp-m79j
+CVE-2026-90776 exp:2026-12-10
+GHSA-v53p-9fqp-m79j exp:2026-12-10
