@@ -3,9 +3,8 @@ namespace: eg-esign-prod
 fqdn: esign.epicgroup.ca
 tag: prod
 
-ingress:
-  tls:
-    secretName: eg-esign-prod-tls
+gateway:
+  tlsSecret: eg-esign-prod-tls
 
 # No mail sink in production — real delivery via SendGrid.
 mailpit:

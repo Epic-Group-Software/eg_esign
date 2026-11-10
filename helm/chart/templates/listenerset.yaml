@@ -1,0 +1,28 @@
+{{- if .Values.gateway.enabled -}}
+# The app's own HTTPS listener on the cluster's shared Gateway (Envoy Gateway). The namespace must carry
+# the label gateway.davincisolutions.ai/public-listeners=true (jenkins/deploy.groovy sets it).
+apiVersion: gateway.networking.k8s.io/v1
+kind: ListenerSet
+metadata:
+  name: {{ include "app.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  parentRef:
+    name: {{ .Values.gateway.name }}
+    namespace: {{ .Values.gateway.namespace }}
+  listeners:
+    - name: {{ include "app.listenerName" . }}
+      hostname: {{ include "app.fqdn" . | quote }}
+      port: 443
+      protocol: HTTPS
+      allowedRoutes:
+        namespaces:
+          from: Same
+      tls:
+        mode: Terminate
+        certificateRefs:
+          # kind defaults to Secret
+          - name: {{ .Values.gateway.tlsSecret }}
+{{- end }}

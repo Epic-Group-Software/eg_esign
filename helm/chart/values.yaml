@@ -162,18 +162,17 @@ service:
     httpPort: 8025
     smtpPort: 1025
 
-ingress:
+# Envoy Gateway: the app's own ListenerSet, Certificate and HTTPRoute (listenerset.yaml, certificate.yaml,
+# httproute.yaml). The Certificate is named after gateway.tlsSecret and issues that secret (the name the
+# old Ingress used, so no new Let's Encrypt order was needed). Envoy has no body-size cap (nginx had 100m;
+# the app limits uploads to 50 MB).
+gateway:
   enabled: true
-  className: nginx
-  tls:
-    secretName: eg-esign-staging-tls
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/proxy-body-size: 100m
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
-    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+  name: public
+  namespace: envoy-gateway-system
+  clusterIssuer: letsencrypt-prod
+  requestTimeout: 300s
+  tlsSecret: eg-esign-staging-tls
 
 config:
   logLevel: info
