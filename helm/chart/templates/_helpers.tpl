@@ -72,3 +72,10 @@ app and any job that needs it cannot drift apart.
       .Values.postgres.auth.database
       .Values.postgres.sslMode -}}
 {{- end }}
+
+{{/*
+Gateway listener name: https- plus the host with dashes (max 63 characters)
+*/}}
+{{- define "app.listenerName" -}}
+{{- printf "https-%s" (include "app.fqdn" . | replace "." "-") | trunc 63 | trimSuffix "-" -}}
+{{- end }}
