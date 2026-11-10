@@ -163,28 +163,16 @@ service:
     smtpPort: 1025
 
 # Envoy Gateway: the app's own ListenerSet, Certificate and HTTPRoute (listenerset.yaml, certificate.yaml,
-# httproute.yaml). The Certificate keeps the name and secret in ingress.tls.secretName, so the switch needs
-# no new Let's Encrypt order. Envoy has no body-size cap (nginx had 100m; the app limits uploads to 50 MB).
+# httproute.yaml). The Certificate is named after gateway.tlsSecret and issues that secret (the name the
+# old Ingress used, so no new Let's Encrypt order was needed). Envoy has no body-size cap (nginx had 100m;
+# the app limits uploads to 50 MB).
 gateway:
   enabled: true
   name: public
   namespace: envoy-gateway-system
   clusterIssuer: letsencrypt-prod
   requestTimeout: 300s
-
-# Kept until DNS has moved to the Gateway; removed in a follow-up PR. No issuer annotation: the chart's
-# Certificate owns the cert now, not the Ingress.
-ingress:
-  enabled: true
-  className: nginx
-  tls:
-    secretName: eg-esign-staging-tls
-  annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/proxy-body-size: 100m
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
-    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+  tlsSecret: eg-esign-staging-tls
 
 config:
   logLevel: info
