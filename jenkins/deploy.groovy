@@ -5,6 +5,7 @@
 // -staging / -prod (env.CRED).
 
 def call() {
+    def helpers = load 'jenkins/helpers.groovy'
     def release = "eg-esign"
     def valuesFile = (env.ENVN == 'prod') ? 'values-production.yaml' : 'values-staging.yaml'
 
@@ -26,7 +27,7 @@ def call() {
         // withCredentials block stays valid; prod simply never renders it.
         string(credentialsId: 'eg-esign-mailpit-ui-password', variable: 'MAILPIT_UI_PASSWORD'),
     ]) {
-        container('kubectl') {
+        helpers.inImage('alpine/k8s:1.32.1') {
             sh """#!/bin/bash
                 set -euo pipefail
                 export KUBECONFIG="\${KUBECONFIG_FILE}"

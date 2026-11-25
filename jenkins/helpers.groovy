@@ -25,6 +25,16 @@ def getCommitSha() {
     return env.STATUS_COMMIT_SHA ?: env.GIT_COMMIT
 }
 
+// Run body's sh steps inside a pinned tool image on the Docker runner, with
+// the workspace mounted (docker-workflow's inside()). --entrypoint= because the
+// gitleaks and trivy images set one, which would swallow inside()'s `cat`
+// keep-alive. The ci.build_url label lets orphan sweeps map a container to its build.
+def inImage(String image, String extraArgs = '', Closure body) {
+    return docker.image(image).inside("--entrypoint= --label ci.build_url=${env.BUILD_URL} ${extraArgs}") {
+        body()
+    }
+}
+
 def withGitHubCredentials(Closure body) {
     withCredentials([usernamePassword(
         credentialsId: 'github-app-davinci',

@@ -7,7 +7,10 @@ def call() {
     def helpers = load 'jenkins/helpers.groovy'
     def failures = []
 
-    container('node') {
+    // Encryption keys are build-time dummies, never used at runtime.
+    helpers.inImage('node:22-alpine',
+        '-e NEXT_PRIVATE_ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000000 ' +
+        '-e NEXT_PRIVATE_ENCRYPTION_SECONDARY_KEY=1111111111111111111111111111111111111111111111111111111111111111') {
         // node:22-alpine ships npm 10.9.8; package.json requires >=11.11.0.
         // npm 10 fails `npm ci` with "Missing: typescript@5.9.3 from lock file".
         sh '''#!/bin/sh
