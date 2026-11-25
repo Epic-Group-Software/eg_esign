@@ -43,7 +43,9 @@ pipeline {
             steps {
                 script {
                     sh 'mkdir -p "$HOME"'
-                    checkout([
+                    // skipDefaultCheckout() means nothing else sets GIT_COMMIT and
+                    // friends; checkout() only returns them.
+                    def scmVars = checkout([
                         $class: 'GitSCM',
                         branches: scm.branches,
                         extensions: scm.extensions,
@@ -52,6 +54,7 @@ pipeline {
                             credentialsId: env.GIT_CREDENTIAL_ID,
                         ]],
                     ])
+                    scmVars.each { k, v -> env."${k}" = v }
 
                     // Every stage shares this one workspace on the runner.
                     env.GIT_COMMIT_SHORT = env.GIT_COMMIT.take(7)
