@@ -24,12 +24,15 @@ def call() {
         // Failing here blocks the push and the deploy.
         helpers.withGitHubStatus('Image Scan') {
             def outputFile = helpers.outputFileFor('Image Scan')
-            def status = helpers.inImage('aquasec/trivy:0.72.0', '-v /var/run/docker.sock:/var/run/docker.sock') {
+            // Scan a saved tarball rather than mounting docker.sock into the
+            // scanner: the container runs as the agent uid (not in the docker
+            // group), and socket access would be root on the shared runner.
+            sh "docker save -o .ci-image.tar ${image}:\${IMAGE_TAG}"
+            def status = helpers.inImage('aquasec/trivy:0.72.0') {
                 sh(returnStatus: true, script: """#!/bin/sh
                     # Default 5m aborts with "context deadline exceeded" on
                     # this image's node_modules tree.
-                    trivy image "${image}:\${IMAGE_TAG}" \
-                        --image-src docker \
+                    trivy image --input .ci-image.tar \
                         --scanners vuln \
                         --severity HIGH,CRITICAL \
                         --ignore-unfixed \
@@ -67,7 +70,7 @@ def call() {
         }
     } finally {
         // Shared runner: drop this build's tags (layers stay as build cache).
-        sh "rm -rf '${dockerCfg}'; docker image rm ${image}:\${IMAGE_TAG} ${image}:\${TAG} 2>/dev/null || true"
+        sh "rm -rf '${dockerCfg}' .ci-image.tar; docker image rm ${image}:\${IMAGE_TAG} ${image}:\${TAG} 2>/dev/null || true"
     }
 }
 
