@@ -37,7 +37,7 @@ app:
   resources:
     requests:
       cpu: 50m
-      memory: 128Mi
+      memory: 512Mi
     limits:
       cpu: 1500m
       memory: 2Gi
@@ -58,8 +58,8 @@ postgres:
     size: 10Gi
   resources:
     requests:
-      cpu: 250m
-      memory: 256Mi
+      cpu: 25m
+      memory: 96Mi
     limits:
       cpu: 1000m
       memory: 1Gi
@@ -73,8 +73,8 @@ minio:
     size: 50Gi
   resources:
     requests:
-      cpu: 25m
-      memory: 64Mi
+      cpu: 10m
+      memory: 160Mi
     limits:
       cpu: 250m
       memory: 256Mi
@@ -94,7 +94,7 @@ mailpit:
   resources:
     requests:
       cpu: 10m
-      memory: 64Mi
+      memory: 32Mi
     limits:
       cpu: 250m
       memory: 256Mi
@@ -102,7 +102,7 @@ mailpit:
     resources:
       requests:
         cpu: 10m
-        memory: 64Mi
+        memory: 160Mi
       limits:
         cpu: 500m
         memory: 512Mi

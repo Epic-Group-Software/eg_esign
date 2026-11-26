@@ -7,7 +7,16 @@ def call() {
     def helpers = load 'jenkins/helpers.groovy'
     def failures = []
 
-    container('node') {
+    // Root in the container (-u 0:0 overrides inside()'s agent uid) because
+    // apk and `npm install -g` need it; the finally below hands the workspace
+    // back to the agent so cleanWs can delete node_modules.
+    // Encryption keys are build-time dummies, never used at runtime.
+    def agentIds = sh(returnStdout: true, script: 'echo "$(id -u):$(id -g)"').trim()
+    helpers.inImage('node:22-alpine',
+        '-u 0:0 ' +
+        '-e NEXT_PRIVATE_ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000000 ' +
+        '-e NEXT_PRIVATE_ENCRYPTION_SECONDARY_KEY=1111111111111111111111111111111111111111111111111111111111111111') {
+      try {
         // node:22-alpine ships npm 10.9.8; package.json requires >=11.11.0.
         // npm 10 fails `npm ci` with "Missing: typescript@5.9.3 from lock file".
         sh '''#!/bin/sh
@@ -20,6 +29,9 @@ def call() {
         helpers.runCheck(failures, 'Lint') { lint(helpers) }
         helpers.runCheck(failures, 'Unit Tests') { unitTests(helpers) }
         helpers.runCheck(failures, 'Build & Typecheck') { buildAndTypecheck(helpers) }
+      } finally {
+        sh "chown -R ${agentIds} . || true"
+      }
     }
 
     helpers.failIfAny(failures)
