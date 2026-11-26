@@ -12,7 +12,7 @@ def call() {
 
     // gitleaks.toml extends the default ruleset and excludes dependency trees
     // and upstream Documenso fixtures.
-    def gitleaksStatus = container('gitleaks') {
+    def gitleaksStatus = helpers.inImage('zricethezav/gitleaks:latest') {
         // No pipe here: piping to tee would report tee's exit status and
         // silently swallow the "leaks found" signal.
         sh(returnStatus: true, script: '''#!/bin/sh
@@ -35,7 +35,7 @@ def call() {
     // node_modules is skipped — Trivy reads package-lock.json for the full
     // dependency graph, so walking the installed tree costs minutes for no
     // extra findings.
-    def trivyStatus = container('trivy') {
+    def trivyStatus = helpers.inImage('aquasec/trivy:0.72.0') {
         sh(returnStatus: true, script: '''#!/bin/sh
             trivy fs . \
                 --scanners vuln \

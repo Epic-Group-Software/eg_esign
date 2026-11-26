@@ -11,7 +11,7 @@ def call() {
     def helpers = load 'jenkins/helpers.groovy'
     def outputFile = helpers.outputFileFor('Helm Lint')
 
-    def status = container('kubectl') {
+    def status = helpers.inImage('alpine/k8s:1.32.1') {
         sh(returnStatus: true, script: '''#!/bin/bash
             set -o pipefail
             {
